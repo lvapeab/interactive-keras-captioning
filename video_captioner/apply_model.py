@@ -29,79 +29,103 @@ def sample_ensemble(args, params):
 
     :param params: parameters of the translation model.
     """
+    from data_engine.prepare_data import update_dataset_from_file
+    from keras_wrapper.model_ensemble import BeamSearchEnsemble
+    from keras_wrapper.cnn_model import loadModel
+    from keras_wrapper.dataset import loadDataset
+    from keras_wrapper.utils import decode_predictions_beam_search
 
-    # Load data
-    dataset = build_dataset(params)
+    logging.info("Using an ensemble of %d models" % len(args.models))
+    models = [loadModel(m, -1, full_path=True) for m in args.models]
+    dataset = loadDataset(args.dataset)
+    if args.features:
+        dataset = update_dataset_from_file(dataset, args.features, params, splits=args.splits, remove_outputs=True)
+
     params['OUTPUT_VOCABULARY_SIZE'] = dataset.vocabulary_len[params['OUTPUTS_IDS_DATASET'][0]]
+    # For converting predictions into sentences
+    index2word_y = dataset.vocabulary[params['OUTPUTS_IDS_DATASET'][0]]['idx2words']
 
-    # Load model
-    video_model = loadModel(params['STORE_PATH'], params['RELOAD'])
-    video_model.setOptimizer()
+    if params.get('APPLY_DETOKENIZATION', False):
+        detokenize_function = eval('dataset.' + params['DETOKENIZATION_METHOD'])
 
-    # Apply sampling
-    extra_vars = dict()
-    extra_vars['tokenize_f'] = eval('dataset.' + params['TOKENIZATION_METHOD'])
-    extra_vars['language'] = params.get('TRG_LAN', 'en')
+    params_prediction = dict()
+    params_prediction['max_batch_size'] = params.get('BATCH_SIZE', 20)
+    params_prediction['n_parallel_loaders'] = params.get('PARALLEL_LOADERS', 1)
+    params_prediction['beam_size'] = params.get('BEAM_SIZE', 6)
+    params_prediction['maxlen'] = params.get('MAX_OUTPUT_TEXT_LEN_TEST', 100)
+    params_prediction['optimized_search'] = params['OPTIMIZED_SEARCH']
+    params_prediction['model_inputs'] = params['INPUTS_IDS_MODEL']
+    params_prediction['model_outputs'] = params['OUTPUTS_IDS_MODEL']
+    params_prediction['dataset_inputs'] = params['INPUTS_IDS_DATASET']
+    params_prediction['dataset_outputs'] = params['OUTPUTS_IDS_DATASET']
+    params_prediction['search_pruning'] = params.get('SEARCH_PRUNING', False)
+    params_prediction['normalize_probs'] = params.get('NORMALIZE_SAMPLING', False)
+    params_prediction['alpha_factor'] = params.get('ALPHA_FACTOR', 1.0)
+    params_prediction['coverage_penalty'] = params.get('COVERAGE_PENALTY', False)
+    params_prediction['length_penalty'] = params.get('LENGTH_PENALTY', False)
+    params_prediction['length_norm_factor'] = params.get('LENGTH_NORM_FACTOR', 0.0)
+    params_prediction['coverage_norm_factor'] = params.get('COVERAGE_NORM_FACTOR', 0.0)
+    params_prediction['pos_unk'] = params.get('POS_UNK', False)
+    params_prediction['state_below_maxlen'] = -1 if params.get('PAD_ON_BATCH', True) \
+        else params.get('MAX_OUTPUT_TEXT_LEN', 50)
+    params_prediction['attend_on_output'] = params.get('ATTEND_ON_OUTPUT', 'transformer' in params['MODEL_TYPE'].lower())
 
-    for s in params["EVAL_ON_SETS"]:
+    model_weights = args.weights
 
+    if model_weights is not None and model_weights != []:
+        assert len(model_weights) == len(models), 'You should give a weight to each model. You gave %d models and %d weights.' % (len(models), len(model_weights))
+        model_weights = map(float, model_weights)
+        if len(model_weights) > 1:
+            logger.info('Giving the following weights to each model: %s' % str(model_weights))
+
+    for s in args.splits:
         # Apply model predictions
-        params_prediction = {'max_batch_size': params['BATCH_SIZE'],
-                             'n_parallel_loaders': params['PARALLEL_LOADERS'],
-                             'predict_on_sets': [s]}
-
-        # Convert predictions into sentences
-        vocab = dataset.vocabulary[params['OUTPUTS_IDS_DATASET'][0]]['idx2words']
-
-        if params['BEAM_SEARCH']:
-            params_prediction['beam_size'] = params['BEAM_SIZE']
-            params_prediction['maxlen'] = params['MAX_OUTPUT_TEXT_LEN_TEST']
-            params_prediction['optimized_search'] = params['OPTIMIZED_SEARCH']
-            params_prediction['model_inputs'] = params['INPUTS_IDS_MODEL']
-            params_prediction['model_outputs'] = params['OUTPUTS_IDS_MODEL']
-            params_prediction['dataset_inputs'] = params['INPUTS_IDS_DATASET']
-            params_prediction['dataset_outputs'] = params['OUTPUTS_IDS_DATASET']
-            params_prediction['normalize_probs'] = params['NORMALIZE_SAMPLING']
-
-            params_prediction['alpha_factor'] = params['ALPHA_FACTOR']
-            predictions = video_model.predictBeamSearchNet(dataset, params_prediction)[s]
-            predictions = video_model.decode_predictions_beam_search(predictions,
-                                                                     vocab,
-                                                                     verbose=params['VERBOSE'])
+        params_prediction['predict_on_sets'] = [s]
+        beam_searcher = BeamSearchEnsemble(models,
+                                           dataset,
+                                           params_prediction,
+                                           model_weights=model_weights,
+                                           n_best=args.n_best,
+                                           verbose=args.verbose)
+        if args.n_best:
+            samples, n_best = beam_searcher.predictBeamSearchNet()[s]
         else:
-            predictions = video_model.predictNet(dataset, params_prediction)[s]
-            predictions = video_model.decode_predictions(predictions, 1,  # always set temperature to 1
-                                                         vocab, params['SAMPLING'], verbose=params['VERBOSE'])
+            samples = beam_searcher.predictBeamSearchNet()[s]
+            n_best = None
 
+        predictions = decode_predictions_beam_search(samples,
+                                                     index2word_y,
+                                                     verbose=args.verbose)
+        # Apply detokenization function if needed
+        if params.get('APPLY_DETOKENIZATION', False):
+            predictions = map(detokenize_function, predictions)
+
+        if args.n_best:
+            n_best_predictions = []
+            for i, (n_best_preds, n_best_scores, n_best_alphas) in enumerate(n_best):
+                n_best_sample_score = []
+                for n_best_pred, n_best_score, n_best_alpha in zip(n_best_preds, n_best_scores, n_best_alphas):
+                    pred = decode_predictions_beam_search([n_best_pred],
+                                                          index2word_y,
+                                                          verbose=args.verbose)
+                    # Apply detokenization function if needed
+                    if params.get('APPLY_DETOKENIZATION', False):
+                        pred = map(detokenize_function, pred)
+
+                    n_best_sample_score.append([i, pred, n_best_score])
+                n_best_predictions.append(n_best_sample_score)
         # Store result
-        filepath = video_model.model_path + '/' + s + '_sampling.pred'  # results file
-        if params['SAMPLING_SAVE_MODE'] == 'list':
-            list2file(filepath, predictions)
-        else:
+        if args.dest is not None:
+            filepath = args.dest  # results file
+            if params.get('SAMPLING_SAVE_MODE', 'list'):
+                list2file(filepath, predictions)
+                if args.n_best:
+                    nbest2file(filepath + '.nbest', n_best_predictions)
+            else:
                 raise Exception('Only "list" is allowed in "SAMPLING_SAVE_MODE"')
-
-        # Evaluate if any metric in params['METRICS']
-        for metric in params['METRICS']:
-            logging.info('Evaluating on metric ' + metric)
-            filepath = video_model.model_path + '/' + s + '_sampling.' + metric  # results file
-
-            # Evaluate on the chosen metric
-            extra_vars[s] = dict()
-            extra_vars[s]['references'] = dataset.extra_variables[s][params['OUTPUTS_IDS_DATASET'][0]]
-            metrics = evaluation.select[metric](
-                pred_list=predictions,
-                verbose=1,
-                extra_vars=extra_vars,
-                split=s)
-
-            # Print results to file
-            with open(filepath, 'w') as f:
-                header = ''
-                line = ''
-                for metric_ in sorted(metrics):
-                    value = metrics[metric_]
-                    header += metric_ + ','
-                    line += str(value) + ','
-                f.write(header + '\n')
-                f.write(line + '\n')
-            logging.info('Done evaluating on metric ' + metric)
+        else:
+            list2stdout(predictions)
+            if args.n_best:
+                logging.info('Storing n-best sentences in ./' + s + '.nbest')
+                nbest2file('./' + s + '.nbest', n_best_predictions)
+        logging.info('Sampling finished')

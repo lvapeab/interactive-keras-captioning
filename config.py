@@ -6,7 +6,7 @@ def load_parameters():
     # preprocessed features
     TASK_NAME = 'MSVD'                           # Task name
     DATASET_NAME = TASK_NAME                        # Dataset name
-    DATA_ROOT_PATH = '/media/HDD_2TB/DATASETS/%s/' % (TASK_NAME)            # Root path to the data
+    DATA_ROOT_PATH = '/home/lvapeab/DATASETS/%s/' % (TASK_NAME)            # Root path to the data
     TRG_LAN = 'en'                                  # Language of the target text
 
     # Dataset parameters
@@ -202,7 +202,7 @@ def load_parameters():
     ATTENTION_MODE = 'add'                        # Attention mode. 'add' (Bahdanau-style), 'dot' (Luong-style) or 'scaled-dot'.
 
     # Encoder configuration
-    RNN_ENCODER_HIDDEN_SIZE = 600                     # For models with RNN encoder
+    RNN_ENCODER_HIDDEN_SIZE = 512                     # For models with RNN encoder
     BIDIRECTIONAL_ENCODER = True                  # Use bidirectional encoder
     BIDIRECTIONAL_DEEP_ENCODER = True             # Use bidirectional encoder in all encoding layers
     BIDIRECTIONAL_MERGE_MODE = 'concat'           # Merge function for bidirectional layers.
@@ -297,7 +297,7 @@ def load_parameters():
                                                        # Saved on epoch 'RELOAD' will be used.
     RELOAD_EPOCH = True                                # Select whether we reload epoch or update number.
 
-    REBUILD_DATASET = False                             # Build again or use stored instance.
+    REBUILD_DATASET = True                             # Build again or use stored instance.
     MODE = 'training'                                  # 'training' or 'sampling' (if 'sampling' then RELOAD must
                                                        # be greater than 0 and EVAL_ON_SETS will be used).
 

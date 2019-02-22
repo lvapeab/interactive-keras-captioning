@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
 
-from more_itertools.more import one
 from six import iteritems
 
 import numpy as np

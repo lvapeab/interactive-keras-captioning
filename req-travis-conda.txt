@@ -1,0 +1,12 @@
+future
+h5py
+matplotlib
+numpy
+scikit-image
+scikit-learn
+six
+pytables
+numpy
+pandas
+scipy
+theano
