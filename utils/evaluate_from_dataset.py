@@ -8,6 +8,7 @@ from pycocoevalcap.cider.cider import Cider
 from pycocoevalcap.meteor.meteor import Meteor
 from pycocoevalcap.rouge.rouge import Rouge
 from pycocoevalcap.ter.ter import Ter
+from keras_wrapper.dataset import loadDataset
 
 parser = argparse.ArgumentParser(
     description="""Computes BLEU, TER, METEOR, ROUGE-L and CIDEr from a htypotheses file with respect to one
@@ -16,12 +17,13 @@ parser.add_argument('-t', '--hypotheses', type=str, help='Hypotheses file')
 parser.add_argument('-m', '--metrics',
                     default=['bleu', 'ter', 'meteor', 'rouge_l', 'cider'], nargs='*',
                     help='Metrics to evaluate on')
+parser.add_argument("-s", "--split", required=False, default=['val'],
+                    help="Split to sample. Should be already included into the dataset object.")
 parser.add_argument('-l', '--language', type=str, default='en',
                     help='Meteor language')
-parser.add_argument('-s', '--step-size', type=int, default=0,
+parser.add_argument('-n', '--step-size', type=int, default=0,
                     help='Step size. 0 == Evaluate all sentences')
-parser.add_argument('-r', '--references', type=str, nargs="+",
-                    help='Path to all the reference files (single-reference files)')
+parser.add_argument("-ds", "--dataset", required=True, help="Dataset instance with data")
 
 
 def load_textfiles(references, hypotheses):
@@ -32,17 +34,13 @@ def load_textfiles(references, hypotheses):
     :param hypotheses: Hypotheses file.
     :return:
     """
-    print("The number of references is {}".format(len(references)))
     hypo = {idx: [lines.strip()] for (idx, lines) in enumerate(hypotheses)}
-    # take out newlines before creating dictionary
-    raw_refs = list([list(map(lambda x: x.strip(), r)) for r in list(zip(*references))])
-    refs = {idx: rr for idx, rr in enumerate(raw_refs)}
     # sanity check that we have the same number of references as hypothesis
-    if len(hypo) != len(refs):
+    if len(hypo) != len(references):
         raise ValueError("There is a sentence number mismatch between the inputs: \n"
                          "\t # sentences in references: %d\n"
-                         "\t # sentences in hypotheses: %d" % (len(refs), len(hypo)))
-    return refs, hypo
+                         "\t # sentences in hypotheses: %d" % (len(references), len(hypo)))
+    return references, hypo
 
 
 def CocoScore(ref, hyp, metrics_list=None, language='en'):
@@ -91,10 +89,10 @@ def evaluate_from_file(args):
     """
     language = args.language
     hypotheses_file = codecs.open(args.hypotheses, 'r', encoding='utf-8')
-    references_files = [codecs.open(references, 'r', encoding='utf-8').readlines()
-                        for references in args.references]
+    ds = loadDataset(args.dataset)
+    references = ds.extra_variables[args.split][list(ds.extra_variables[args.split].keys())[0]]
     step_size = args.step_size
-    ref, hypothesis = load_textfiles(references_files, hypotheses_file)
+    ref, hypothesis = load_textfiles(references, hypotheses_file)
     if step_size < 1:
         score = CocoScore(ref, hypothesis, metrics_list=args.metrics,
                           language=language)

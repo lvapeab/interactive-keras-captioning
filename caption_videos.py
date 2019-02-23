@@ -4,7 +4,7 @@ import argparse
 import logging
 import ast
 from keras_wrapper.extra.read_write import pkl2dict
-from interactive_captioning_simulation import check_params
+from video_captioner import check_params
 from video_captioner.apply_model import sample_ensemble
 
 logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(message)s', datefmt='%d/%m/%Y %H:%M:%S')

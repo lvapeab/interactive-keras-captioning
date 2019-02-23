@@ -1,7 +1,7 @@
 import pytest
 import codecs
 from config import load_parameters
-from utils.evaluate_from_file import load_textfiles, CocoScore
+from utils.evaluate_from_dataset import load_textfiles, CocoScore
 
 
 def test_load_textfiles():

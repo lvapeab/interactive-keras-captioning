@@ -65,7 +65,7 @@ def sample_ensemble(args, params):
     params_prediction['length_penalty'] = params.get('LENGTH_PENALTY', False)
     params_prediction['length_norm_factor'] = params.get('LENGTH_NORM_FACTOR', 0.0)
     params_prediction['coverage_norm_factor'] = params.get('COVERAGE_NORM_FACTOR', 0.0)
-    params_prediction['pos_unk'] = params.get('POS_UNK', False)
+    params_prediction['pos_unk'] = False
     params_prediction['state_below_maxlen'] = -1 if params.get('PAD_ON_BATCH', True) \
         else params.get('MAX_OUTPUT_TEXT_LEN', 50)
     params_prediction['attend_on_output'] = params.get('ATTEND_ON_OUTPUT', 'transformer' in params['MODEL_TYPE'].lower())
@@ -92,10 +92,10 @@ def sample_ensemble(args, params):
         else:
             samples = beam_searcher.predictBeamSearchNet()[s]
             n_best = None
-
         predictions = decode_predictions_beam_search(samples,
                                                      index2word_y,
                                                      verbose=args.verbose)
+
         # Apply detokenization function if needed
         if params.get('APPLY_DETOKENIZATION', False):
             predictions = map(detokenize_function, predictions)
