@@ -46,8 +46,8 @@ def load_parameters():
     EVAL_ON_SETS = ['val']                        # Possible values: 'train', 'val' and 'test' (external evaluator)
     EVAL_ON_SETS_KERAS = []                       # Possible values: 'train', 'val' and 'test' (Keras' evaluator). Untested.
     START_EVAL_ON_EPOCH = 0                       # First epoch to start the model evaluation
-    EVAL_EACH_EPOCHS = True                       # Select whether evaluate between N epochs or N updates
-    EVAL_EACH = 1                                 # Sets the evaluation frequency (epochs or updates)
+    EVAL_EACH_EPOCHS = False                       # Select whether evaluate between N epochs or N updates
+    EVAL_EACH = 500                                 # Sets the evaluation frequency (epochs or updates)
 
     # Search parameters
     SAMPLING = 'max_likelihood'                   # Possible values: multinomial or max_likelihood (recommended).
@@ -140,7 +140,7 @@ def load_parameters():
 
     # Training parameters
     MAX_EPOCH = 50                               # Stop when computed this number of epochs.
-    BATCH_SIZE = 50                               # Size of each minibatch.
+    BATCH_SIZE = 32                               # Size of each minibatch.
     N_GPUS = 1                                    # Number of GPUs to use. Only for Tensorflow backend. Each GPU will receive mini-batches of BATCH_SIZE / N_GPUS.
 
     HOMOGENEOUS_BATCHES = False                   # Use batches with homogeneous output lengths (Dangerous!!).
@@ -179,8 +179,8 @@ def load_parameters():
     SCALE_SOURCE_WORD_EMBEDDINGS = True          # Scale source word embeddings by Sqrt(SOURCE_TEXT_EMBEDDING_SIZE)
     SCALE_TARGET_WORD_EMBEDDINGS = True          # Scale target word embeddings by Sqrt(TARGET_TEXT_EMBEDDING_SIZE)
 
-    N_LAYERS_ENCODER = 6                          # Stack this number of encoding layers.
-    N_LAYERS_DECODER = 6                          # Stack this number of decoding layers.
+    N_LAYERS_ENCODER = 4                          # Stack this number of encoding layers.
+    N_LAYERS_DECODER = 4                          # Stack this number of decoding layers.
 
     IMG_EMBEDDING_LAYERS = []  # FC layers for visual embedding
                                # Here we should specify the activation function and the output dimension
