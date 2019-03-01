@@ -509,9 +509,9 @@ def main():
                          'length_penalty': parameters.get('LENGTH_PENALTY', False),
                          'length_norm_factor': parameters.get('LENGTH_NORM_FACTOR', 0.0),
                          'coverage_norm_factor': parameters.get('COVERAGE_NORM_FACTOR', 0.0),
-                         'output_max_length_depending_on_x': parameters.get('MAXLEN_GIVEN_X', True),
+                         'output_max_length_depending_on_x': parameters.get('MAXLEN_GIVEN_X', False),
                          'output_max_length_depending_on_x_factor': parameters.get('MAXLEN_GIVEN_X_FACTOR', 3),
-                         'output_min_length_depending_on_x': parameters.get('MINLEN_GIVEN_X', True),
+                         'output_min_length_depending_on_x': parameters.get('MINLEN_GIVEN_X', False),
                          'output_min_length_depending_on_x_factor': parameters.get('MINLEN_GIVEN_X_FACTOR', 2),
                          'attend_on_output': parameters.get('ATTEND_ON_OUTPUT', 'transformer' in parameters['MODEL_TYPE'].lower()),
                          'n_best_optimizer': parameters.get('N_BEST_OPTIMIZER', False)

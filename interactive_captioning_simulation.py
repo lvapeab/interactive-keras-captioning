@@ -286,8 +286,8 @@ def interactive_simulation():
                                  'model_outputs': params['OUTPUTS_IDS_MODEL'],
                                  'dataset_inputs': params['INPUTS_IDS_DATASET'],
                                  'dataset_outputs': params['OUTPUTS_IDS_DATASET'],
-                                 'normalize_probs': params['NORMALIZE_SAMPLING'],
-                                 'alpha_factor': params['ALPHA_FACTOR'],
+                                 'normalize_probs': params.get('NORMALIZE_SAMPLING', False),
+                                 'alpha_factor': params.get('ALPHA_FACTOR', 1.0),
                                  'normalize': params.get('NORMALIZATION', False),
                                  'normalization_type': params.get('NORMALIZATION_TYPE', False),
                                  'data_augmentation': params.get('DATA_AUGMENTATION', False),
@@ -295,7 +295,6 @@ def interactive_simulation():
                                  'wo_da_patch_type': params.get('WO_DA_PATCH_TYPE', 'whole'),
                                  'da_patch_type': params.get('DA_PATCH_TYPE', 'resize_and_rndcrop'),
                                  'da_enhance_list': params.get('DA_ENHANCE_LIST', None),
-                                 'pos_unk': params.get('POS_UNK', None),
                                  'heuristic': params.get('HEURISTIC', None),
                                  'search_pruning': params.get('SEARCH_PRUNING', False),
                                  'state_below_index': -1,
@@ -308,9 +307,11 @@ def interactive_simulation():
                                  'length_penalty': params.get('LENGTH_PENALTY', False),
                                  'length_norm_factor': params.get('LENGTH_NORM_FACTOR', 0.0),
                                  'coverage_norm_factor': params.get('COVERAGE_NORM_FACTOR', 0.0),
-                                 'output_max_length_depending_on_x': params.get('MAXLEN_GIVEN_X', True),
+                                 'pos_unk': False,
+                                 'state_below_maxlen': -1 if params.get('PAD_ON_BATCH', True) else params.get('MAX_OUTPUT_TEXT_LEN_TEST', 50),
+                                 'output_max_length_depending_on_x': params.get('MAXLEN_GIVEN_X', False),
                                  'output_max_length_depending_on_x_factor': params.get('MAXLEN_GIVEN_X_FACTOR', 3),
-                                 'output_min_length_depending_on_x': params.get('MINLEN_GIVEN_X', True),
+                                 'output_min_length_depending_on_x': params.get('MINLEN_GIVEN_X', False),
                                  'output_min_length_depending_on_x_factor': params.get('MINLEN_GIVEN_X_FACTOR', 2),
                                  'attend_on_output': params.get('ATTEND_ON_OUTPUT', 'transformer' in params['MODEL_TYPE'].lower()),
                                  'n_best_optimizer': params.get('N_BEST_OPTIMIZER', False)
@@ -496,7 +497,6 @@ def interactive_simulation():
                               float(total_mouse_actions) / total_chars,
                               float(total_errors + total_mouse_actions) / total_chars
                               ))
-
                 # 4. If we are performing OL after each correct sample:
                 if args.online:
                     # 4.1 Compute model inputs
