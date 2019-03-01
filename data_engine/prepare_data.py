@@ -224,8 +224,7 @@ def build_dataset(params):
         saveDataset(ds, params['DATASET_STORE_PATH'])
     else:
         # We can easily recover it with a single line
-        ds = loadDataset(params['DATASET_STORE_PATH'] + '/Dataset_' + params[
-            'DATASET_NAME'] + '.pkl')
+        ds = loadDataset(params['DATASET_STORE_PATH'] + '/Dataset_' + params['DATASET_NAME'] + '.pkl')
 
     return ds
 

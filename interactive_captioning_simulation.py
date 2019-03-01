@@ -29,7 +29,6 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger(__name__)
 logger.setLevel(2)
 
-
 def check_params(parameters):
     assert parameters['BEAM_SEARCH'], 'Only beam search is supported.'
 
@@ -48,7 +47,7 @@ def parse_args():
     parser.add_argument("-bpe-tok", "--tokenize-bpe", help="Apply BPE tokenization", action='store_true', default=False)
     parser.add_argument("-bpe-detok", "--detokenize-bpe", help="Revert BPE tokenization",
                         action='store_true', default=True)
-    parser.add_argument("-tok-ref", "--tokenize-references", help="Tokenize references. If set to False, the references"
+    parser.add_argument("-tok-ref", "--tokenize-references", help="Tokenize references. If split to False, the references"
                                                                   "should be given already preprocessed/tokenized.",
                         action='store_true', default=False)
     parser.add_argument("-d", "--dest", required=True, help="File to save translations in")
@@ -317,12 +316,6 @@ def interactive_simulation():
                                  'n_best_optimizer': params.get('N_BEST_OPTIMIZER', False)
                                  }
 
-            # Manage pos_unk strategies
-            if params_prediction.get('pos_unk', False):
-                mapping = None if dataset.mapping == dict() else dataset.mapping
-            else:
-                mapping = None
-
             # Build interactive sampler
             interactive_beam_searcher = InteractiveBeamSearchSampler(models,
                                                                      dataset,
@@ -346,12 +339,12 @@ def interactive_simulation():
                 hypothesis_number = 0
                 # Load data from dataset
                 current_input = dataset.getX_FromIndices(s, [n_sample],
-                                                               normalization_type=params_prediction.get('normalization_type'),
-                                                               normalization = params_prediction.get('normalize', False),
-                                                               dataAugmentation=params_prediction.get('data_augmentation', False),
-                                                               wo_da_patch_type = params_prediction.get('wo_da_patch_type', 'whole'),
-                                                               da_patch_type = params_prediction.get('da_patch_type', 'resize_and_rndcrop'),
-                                                               da_enhance_list =params_prediction.get('da_enhance_list', None))[0][0]
+                                                         normalization_type=params_prediction.get('normalization_type'),
+                                                         normalization = params_prediction.get('normalize', False),
+                                                         dataAugmentation=params_prediction.get('data_augmentation', False),
+                                                         wo_da_patch_type = params_prediction.get('wo_da_patch_type', 'whole'),
+                                                         da_patch_type = params_prediction.get('da_patch_type', 'resize_and_rndcrop'),
+                                                         da_enhance_list =params_prediction.get('da_enhance_list', None))[0][0]
 
 
                 # Load references

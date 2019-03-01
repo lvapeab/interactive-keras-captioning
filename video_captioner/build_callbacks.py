@@ -4,8 +4,8 @@ from keras_wrapper.extra.callbacks import *
 
 def buildCallbacks(params, model, dataset):
     """
-    Builds the selected set of callbacks run during the training of the model:
-        * PrintPerformanceMetricOnEpochEndOrEachNUpdates: Evaluates the model in the validation set given a number of epochs/updates.
+    Builds the selected split of callbacks run during the training of the model:
+        * PrintPerformanceMetricOnEpochEndOrEachNUpdates: Evaluates the model in the validation split given a number of epochs/updates.
         * SampleEachNUpdates: Shows several translation samples during training.
 
 

@@ -14,7 +14,7 @@ def check_params(params):
         logger.warn('It seems that the pretrained word vectors provided for the target text are not in npy format.'
                     'You should preprocess the word embeddings with the "utils/preprocess_*_word_vectors.py script.')
     if not params['PAD_ON_BATCH']:
-        logger.warn('It is HIGHLY recommended to set the option "PAD_ON_BATCH = True."')
+        logger.warn('It is HIGHLY recommended to split the option "PAD_ON_BATCH = True."')
 
     if 'from_logits' in params.get('LOSS', 'categorical_crossentropy'):
         if params.get('CLASSIFIER_ACTIVATION', 'softmax'):

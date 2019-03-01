@@ -47,7 +47,7 @@ class VideoDesc_Model(Model_Wrapper):
     :param dict params: all hyperparameters of the model.
     :param str model_type: network name type (corresponds to any method defined in the section 'MODELS' of this class).
                  Only valid if 'structure_path' == None.
-    :param int verbose: set to 0 if you don't want the model to output informative messages
+    :param int verbose: split to 0 if you don't want the model to output informative messages
     :param str structure_path: path to a Keras' model json file.
                           If we speficy this parameter then 'type' will be only an informative parameter.
     :param str weights_path: path to the pre-trained weights file (if None, then it will be initialized according to params)
@@ -67,7 +67,7 @@ class VideoDesc_Model(Model_Wrapper):
         :param params: all hyperparams of the model.
         :param model_type: network name type (corresponds to any method defined in the section 'MODELS' of this class).
                      Only valid if 'structure_path' == None.
-        :param verbose: set to 0 if you don't want the model to output informative messages
+        :param verbose: split to 0 if you don't want the model to output informative messages
         :param structure_path: path to a Keras' model json file.
                               If we speficy this parameter then 'type' will be only an informative parameter.
         :param weights_path: path to the pre-trained weights file (if None, then it will be randomly initialized)
@@ -758,7 +758,7 @@ class VideoDesc_Model(Model_Wrapper):
         #                     BEAM SEARCH MODEL                          #
         ##################################################################
         # Now that we have the basic training model ready, let's prepare the model for applying decoding
-        # The beam-search model will include all the minimum required set of layers (decoder stage) which offer the
+        # The beam-search model will include all the minimum required split of layers (decoder stage) which offer the
         # possibility to generate the next state in the sequence given a pre-processed input (encoder stage)
         if params['BEAM_SEARCH']:
             # First, we need a model that outputs the preprocessed input + initial h state
@@ -1224,7 +1224,7 @@ class VideoDesc_Model(Model_Wrapper):
         #                         SAMPLING MODEL                         #
         ##################################################################
         # Now that we have the basic training model ready, let's prepare the model for applying decoding
-        # The beam-search model will include all the minimum required set of layers (decoder stage) which offer the
+        # The beam-search model will include all the minimum required split of layers (decoder stage) which offer the
         # possibility to generate the next state in the sequence given a pre-processed input (encoder stage)
         # First, we need a model that outputs the preprocessed input
         # for applying the initial forward pass
