@@ -773,9 +773,7 @@ class Captioning_Model(Model_Wrapper):
         else:
             self.multi_gpu_model = None
 
-        ##################################################################
-        #                     BEAM SEARCH MODEL                          #
-        ##################################################################
+        # BEAM SEARCH MODEL
         # Now that we have the basic training model ready, let's prepare the model for applying decoding
         # The beam-search model will include all the minimum required split of layers (decoder stage) which offer the
         # possibility to generate the next state in the sequence given a pre-processed input (encoder stage)
@@ -983,17 +981,16 @@ class Captioning_Model(Model_Wrapper):
                                  name='lambda_permute_image')(image)
             input_object = image
             encoded_video_dimension = params['FEATURE_DIMENSION'][0]
-
+            max_len = params['FEATURE_DIMENSION'][1] * params['FEATURE_DIMENSION'][2]
         else:
             # Video model
             model_input = Input(name=self.ids_inputs[0],
                           shape=tuple([params['NUM_FRAMES'], params['FEATURE_DIMENSION']]))
             input_object = model_input
             encoded_video_dimension = params['FEATURE_DIMENSION']
+            max_len = params['NUM_FRAMES']
 
-        ##################################################################
-        #                       ENCODER
-        ##################################################################
+        # ENCODER
         for activation, dimension in params['IMG_EMBEDDING_LAYERS']:
             input_object = TimeDistributed(Dense(dimension,
                                                 name='%s_1' % activation,
@@ -1007,7 +1004,7 @@ class Captioning_Model(Model_Wrapper):
 
         video_positions = RemoveThirdDimension()(input_object)
         video_positions = PositionLayer(name='position_layer_video')(video_positions)
-        max_len = params['NUM_FRAMES']
+
         positional_embedding = Embedding(max_len,
                                          encoded_video_dimension,
                                          name='positional_video_embedding',
@@ -1268,9 +1265,7 @@ class Captioning_Model(Model_Wrapper):
         else:
             self.multi_gpu_model = None
 
-        ##################################################################
-        #                         SAMPLING MODEL                         #
-        ##################################################################
+        # SAMPLING MODEL
         # Now that we have the basic training model ready, let's prepare the model for applying decoding
         # The beam-search model will include all the minimum required split of layers (decoder stage) which offer the
         # possibility to generate the next state in the sequence given a pre-processed input (encoder stage)
@@ -1297,9 +1292,6 @@ class Captioning_Model(Model_Wrapper):
         #   - softmax probabilities
 
         preprocessed_size = params['MODEL_SIZE']
-        preprocessed_input_object = Input(name='preprocessed_input',
-                                         shape=tuple([elements_per_object, preprocessed_size]))
-
 
         # Define inputs
         preprocessed_annotations = Input(name='preprocessed_input',
