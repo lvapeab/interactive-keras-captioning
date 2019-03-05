@@ -4,50 +4,113 @@ def load_parameters():
     """
     # Input data params
     # preprocessed features
-    TASK_NAME = 'MSVD'                           # Task name
+    TASK_NAME = 'Flickr8k'                           # Task name
     DATASET_NAME = TASK_NAME                        # Dataset name
-    DATA_ROOT_PATH = '/home/lvapeab/DATASETS/%s/' % (TASK_NAME)            # Root path to the data
+    DATA_ROOT_PATH = '/home/lvapeab/DATASETS/%s/' % TASK_NAME  # Root path to the data
     TRG_LAN = 'en'                                  # Language of the target text
+    INPUT_DATA_TYPE = 'image-features'
+    # Prepare input mapping between dataset and model
+    INPUTS_IDS_DATASET = []
+    INPUTS_IDS_MODEL = []
+
+    if 'features' in INPUT_DATA_TYPE:
+        IMG_SIZE = None
+        IMG_CROP_SIZE = None
+        NORMALIZE = False
+        NORMALIZATION_TYPE = None
+
+        if INPUT_DATA_TYPE == 'image-features':
+            # Input data
+            FEATURE_NAMES = ['InceptionV3']
+            # Image parameters
+            FEATURE_DIMENSION = [2048, 8, 8]
+
+
+            NUM_FRAMES = -1
+            # Image and features files (the chars {} will be replaced by each type of features)
+            FRAMES_LIST_FILES = {'train': 'Annotations/%s/train_list_features.txt',#['Annotations/train_list_images.txt', 'Annotations/train_list_ids.txt'],
+                                 'val': 'Annotations/%s/val_list_features.txt', # ['Annotations/val_list_images.txt', 'Annotations/val_list_ids.txt'],
+                                 'test': 'Annotations/%s/test_list_features.txt' #  ['Annotations/test_list_images.txt', 'Annotations/test_list_ids.txt']
+                                }
+
+        else:
+            # Input data
+            FEATURE_NAMES = ['C3D_fc8_ImageNet']
+
+            # Video parameters
+            NUM_FRAMES = 26 # fixed number of input frames per video
+            FEATURE_DIMENSION = 1511
+
+            # Features from video frames
+            FRAMES_LIST_FILES = {'train': 'Annotations/%s/train_feat_list.txt',                 # Feature frames list files
+                                 'val': 'Annotations/%s/val_feat_list.txt',
+                                 'test': 'Annotations/%s/test_feat_list.txt',
+                                }
+            FRAMES_COUNTS_FILES = {'train': 'Annotations/%s/train_feat_counts.txt',           # Frames counts files
+                                   'val': 'Annotations/%s/val_feat_counts.txt',
+                                   'test': 'Annotations/%s/test_feat_counts.txt',
+                                  }
+
+        for f in FEATURE_NAMES:
+            INPUTS_IDS_DATASET.append(f)
+            INPUTS_IDS_MODEL.append(f)
+        DATASET_NAME += "_" + "_".join(FEATURE_NAMES)  # Dataset name
+
+    elif 'raw-image' in INPUT_DATA_TYPE:
+        # InceptionV3
+        IMG_SIZE = [342, 342, 3]  # Size of the input images (will be resized to the desired size)
+        IMG_CROP_SIZE = [299, 299, 3]  # Size of the image crops inputted to the model
+
+        # Image and features files (the chars {} will be replaced by each type of features)
+        FRAMES_LIST_FILES = {'train': ['Annotations/train_list_images.txt',
+                               'Annotations/train_list_ids.txt'],
+                             'val': ['Annotations/val_list_images.txt',
+                                     'Annotations/val_list_ids.txt'],
+                             'test': ['Annotations/test_list_images.txt',
+                                      'Annotations/test_list_ids.txt']
+                     }
+        FEATURE_NAMES = []
+        NORMALIZE = True
+        NORMALIZATION_TYPE = '(-1)-1'
+
+        # Prepare input mapping between dataset and model
+        INPUTS_IDS_DATASET = ['image']  # Corresponding inputs of the dataset
+        INPUTS_IDS_MODEL = ['input_1']  # Corresponding inputs of the built model ('input_1' for ResNet50)
 
     # Dataset parameters
-    INPUTS_IDS_DATASET = ['video', 'state_below']   # Corresponding inputs of the dataset
-    OUTPUTS_IDS_DATASET = ['description']           # Corresponding outputs of the dataset
-    INPUTS_IDS_MODEL = ['video', 'state_below']     # Corresponding inputs of the built model
-    OUTPUTS_IDS_MODEL = ['description']             # Corresponding outputs of the built model
-    INPUTS_TYPES_DATASET = ['video-features', 'text']  # Corresponding types of the data.
-    OUTPUTS_TYPES_DATASET = ['text']                  # They are equivalent, only differ on how the data is loaded.
+    INPUTS_IDS_DATASET.append('state_below')
+    INPUTS_IDS_MODEL.append('state_below')
+    # Prepare output mapping between dataset and model
+    OUTPUTS_IDS_DATASET = ['description']  # Corresponding outputs of the dataset
+    OUTPUTS_IDS_MODEL = ['description']  # Corresponding outputs of the built model
 
-    # Input data
-    NUM_FRAMES = 26                                             # fixed number of input frames per video
-
-    #### Features from video frames
-    FRAMES_LIST_FILES = {'train': 'Annotations/%s/train_feat_list.txt',                 # Feature frames list files
-                         'val': 'Annotations/%s/val_feat_list.txt',
-                         'test': 'Annotations/%s/test_feat_list.txt',
-                        }
-    FRAMES_COUNTS_FILES = {  'train': 'Annotations/%s/train_feat_counts.txt',           # Frames counts files
-                             'val': 'Annotations/%s/val_feat_counts.txt',
-                             'test': 'Annotations/%s/test_feat_counts.txt',
-                          }
-    FEATURE_NAMES = ['C3D_fc8_ImageNet'] # append '_L2' at the end of each feature type if using their L2 version
+    # Corresponding types of the data.
+    INPUTS_TYPES_DATASET = [INPUT_DATA_TYPE, 'text']
+    OUTPUTS_TYPES_DATASET = ['text']
 
     # Output data
-    DESCRIPTION_FILES = {'train': 'Annotations/tokenized/bpe/training.txt',                 # Description files
+    DESCRIPTION_FILES = {'train': 'Annotations/tokenized/bpe/training.txt', # Description files
                          'val': 'Annotations/tokenized/bpe/dev.txt',
                          'test': 'Annotations/tokenized/bpe/test.txt',
                         }
-    DESCRIPTION_COUNTS_FILES = { 'train': 'Annotations/train_descriptions_counts.npy',  # Description counts files
-                                 'val': 'Annotations/val_descriptions_counts.npy',
-                                 'test': 'Annotations/test_descriptions_counts.npy',
+    if 'image' in INPUT_DATA_TYPE:
+        LABELS_PER_SAMPLE = 5  # set to 0 if using a variable number of captions per image.
+    else:
+        LABELS_PER_SAMPLE = 0  # set to 0 if using a variable number of captions per image.
+
+    # This will be used if LABELS_PER_SAMPLE == 0
+    DESCRIPTION_COUNTS_FILES = {'train': 'Annotations/train_descriptions_counts.npy',  # Description counts files
+                                'val': 'Annotations/val_descriptions_counts.npy',
+                                'test': 'Annotations/test_descriptions_counts.npy',
                                }
 
     # Evaluation params
     METRICS = ['coco']                            # Metric used for evaluating the model
-    EVAL_ON_SETS = ['val', 'test']                        # Possible values: 'train', 'val' and 'test' (external evaluator)
+    EVAL_ON_SETS = ['val']                        # Possible values: 'train', 'val' and 'test' (external evaluator)
     EVAL_ON_SETS_KERAS = []                       # Possible values: 'train', 'val' and 'test' (Keras' evaluator). Untested.
-    START_EVAL_ON_EPOCH = 0                       # First epoch to start the model evaluation
+    START_EVAL_ON_EPOCH = 2                       # First epoch to start the model evaluation
     EVAL_EACH_EPOCHS = False                       # Select whether evaluate between N epochs or N updates
-    EVAL_EACH = 100                                 # Sets the evaluation frequency (epochs or updates)
+    EVAL_EACH = 250                                 # Sets the evaluation frequency (epochs or updates)
 
     # Search parameters
     SAMPLING = 'max_likelihood'                   # Possible values: multinomial or max_likelihood (recommended).
@@ -93,7 +156,6 @@ def load_parameters():
     # Text parameters
     FILL = 'end'                                  # Whether we pad the 'end', the 'start' of  the sentence with 0s. We can also 'center' it.
     PAD_ON_BATCH = True                           # Whether we take as many timesteps as the longest sequence of
-    IMG_FEAT_SIZE = 1511                          # Size of the image features
                                                   # the batch or a fixed size (MAX_OUTPUT_TEXT_LEN).
     # Output text parameters
     OUTPUT_VOCABULARY_SIZE = 0                    # Size of the input vocabulary. Set to 0 for using all,
@@ -111,7 +173,7 @@ def load_parameters():
 
     OPTIMIZER = 'Adam'                            # Optimizer. Supported optimizers: SGD, RMSprop, Adagrad, Adadelta, Adam, Adamax, Nadam.
     LR = 0.0002                                   # Learning rate. Recommended values - Adam 0.0002 - Adadelta 1.0.
-    CLIP_C = 0.                                   # During training, clip L2 norm of gradients to this value (0. means deactivated).
+    CLIP_C = 10.                                   # During training, clip L2 norm of gradients to this value (0. means deactivated).
     CLIP_V = 0.                                   # During training, clip absolute value of gradients to this value (0. means deactivated).
     USE_TF_OPTIMIZER = True                       # Use native Tensorflow's optimizer (only for the Tensorflow backend).
 
@@ -157,7 +219,7 @@ def load_parameters():
     STOP_METRIC = 'Bleu_4'                        # Metric for the stop.
 
     # Model parameters
-    MODEL_TYPE = 'Transformer'                      # Model to train. See model_zoo.py for more info.
+    MODEL_TYPE = 'AttentionRNNEncoderDecoder'                      # Model to train. See model_zoo.py for more info.
                                                   # Supported architectures: 'AttentionRNNEncoderDecoder' and 'Transformer'.
 
     # Hyperparameters common to all models
@@ -170,17 +232,17 @@ def load_parameters():
     INNER_INIT = 'orthogonal'                     # Initialization function for inner RNN matrices.
     INIT_ATT = 'glorot_uniform'                   # Initialization function for attention mechism matrices
 
-    TARGET_TEXT_EMBEDDING_SIZE = 256              # Source language word embedding size.
+    TARGET_TEXT_EMBEDDING_SIZE = 192              # Source language word embedding size.
     TRG_PRETRAINED_VECTORS = None                 # Path to pretrained vectors. (e.g. DATA_ROOT_PATH + '/DATA/word2vec.%s.npy' % TRG_LAN)
                                                   # Set to None if you don't want to use pretrained vectors.
                                                   # When using pretrained word embeddings, the size of the pretrained word embeddings must match with the word embeddings size.
     TRG_PRETRAINED_VECTORS_TRAINABLE = True       # Finetune or not the target word embedding vectors.
 
     SCALE_SOURCE_WORD_EMBEDDINGS = False          # Scale source word embeddings by Sqrt(SOURCE_TEXT_EMBEDDING_SIZE)
-    SCALE_TARGET_WORD_EMBEDDINGS = True          # Scale target word embeddings by Sqrt(TARGET_TEXT_EMBEDDING_SIZE)
+    SCALE_TARGET_WORD_EMBEDDINGS = False          # Scale target word embeddings by Sqrt(TARGET_TEXT_EMBEDDING_SIZE)
 
-    N_LAYERS_ENCODER = 3                          # Stack this number of encoding layers.
-    N_LAYERS_DECODER = 3                          # Stack this number of decoding layers.
+    N_LAYERS_ENCODER = 0                          # Stack this number of encoding layers.
+    N_LAYERS_DECODER = 1                          # Stack this number of decoding layers.
 
     IMG_EMBEDDING_LAYERS = []  # FC layers for visual embedding
                                # Here we should specify the activation function and the output dimension
@@ -202,7 +264,7 @@ def load_parameters():
     ATTENTION_MODE = 'add'                        # Attention mode. 'add' (Bahdanau-style), 'dot' (Luong-style) or 'scaled-dot'.
 
     # Encoder configuration
-    RNN_ENCODER_HIDDEN_SIZE = 256                     # For models with RNN encoder
+    RNN_ENCODER_HIDDEN_SIZE = 0                     # For models with RNN encoder
     BIDIRECTIONAL_ENCODER = True                  # Use bidirectional encoder
     BIDIRECTIONAL_DEEP_ENCODER = True             # Use bidirectional encoder in all encoding layers
     BIDIRECTIONAL_MERGE_MODE = 'concat'           # Merge function for bidirectional layers.
@@ -213,7 +275,7 @@ def load_parameters():
     INIT_LAYERS = ['tanh']
 
     # Decoder configuration
-    RNN_DECODER_HIDDEN_SIZE = 256                      # For models with RNN decoder.
+    RNN_DECODER_HIDDEN_SIZE = 192                      # For models with RNN decoder.
     ATTENTION_SIZE = RNN_DECODER_HIDDEN_SIZE
 
     # Skip connections parameters
@@ -224,7 +286,7 @@ def load_parameters():
 
     # Transformer model hyperparameters
     # # # # # # # # # # # # # # # # # # # # # # # #
-    MODEL_SIZE = 256                               # Transformer model size (d_{model} in de paper).
+    MODEL_SIZE = 192                               # Transformer model size (d_{model} in de paper).
     MULTIHEAD_ATTENTION_ACTIVATION = 'relu'     # Activation the input projections in the Multi-Head Attention blocks.
     FF_SIZE = MODEL_SIZE * 4                      # Size of the feed-forward layers of the Transformer model.
     N_HEADS = 4                                   # Number of parallel attention layers of the Transformer model.

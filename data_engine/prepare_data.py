@@ -140,60 +140,71 @@ def build_dataset(params):
                      'train',
                      type=params['OUTPUTS_TYPES_DATASET'][0],
                      id=params['OUTPUTS_IDS_DATASET'][0],
+                     tokenization=params.get('TOKENIZATION_METHOD', 'tokenize_none'),
                      build_vocabulary=True,
-                     tokenization=params['TOKENIZATION_METHOD'],
-                     fill=params['FILL'],
-                     pad_on_batch=True,
-                     max_text_len=params['MAX_OUTPUT_TEXT_LEN'],
-                     sample_weights=params['SAMPLE_WEIGHTS'],
-                     min_occ=params['MIN_OCCURRENCES_OUTPUT_VOCAB'])
+                     pad_on_batch=params.get('PAD_ON_BATCH', True),
+                     sample_weights=params.get('SAMPLE_WEIGHTS', True),
+                     fill=params.get('FILL', 'end'),
+                     max_text_len=params.get('MAX_OUTPUT_TEXT_LEN', 70),
+                     max_words=params.get('OUTPUT_VOCABULARY_SIZE', 0),
+                     min_occ=params.get('MIN_OCCURRENCES_OUTPUT_VOCAB', 0),
+                     bpe_codes=params.get('BPE_CODES_PATH', None),
+                     label_smoothing=params.get('LABEL_SMOOTHING', 0.))
 
-        ds.setOutput(base_path + '/' + params['DESCRIPTION_FILES']['val'],
-                     'val',
-                     type=params['OUTPUTS_TYPES_DATASET'][0],
-                     id=params['OUTPUTS_IDS_DATASET'][0],
-                     build_vocabulary=True,
-                     pad_on_batch=True,
-                     tokenization=params['TOKENIZATION_METHOD'],
-                     sample_weights=params['SAMPLE_WEIGHTS'],
-                     max_text_len=params['MAX_OUTPUT_TEXT_LEN_TEST'],
-                     min_occ=params['MIN_OCCURRENCES_OUTPUT_VOCAB'])
+        for split in ['val', 'test']:
+            if params['DESCRIPTION_FILES'].get(split) is not None:
+                ds.setOutput(base_path + '/' + params['DESCRIPTION_FILES'][split],
+                             split,
+                             type=params['OUTPUTS_TYPES_DATASET'][0],
+                             id=params['OUTPUTS_IDS_DATASET'][0],
+                             pad_on_batch=params.get('PAD_ON_BATCH', True),
+                             tokenization=params.get('TOKENIZATION_METHOD', 'tokenize_none'),
+                             sample_weights=params.get('SAMPLE_WEIGHTS', True),
+                             max_text_len=params.get('MAX_OUTPUT_TEXT_LEN', 70),
+                             max_words=params.get('OUTPUT_VOCABULARY_SIZE', 0),
+                             bpe_codes=params.get('BPE_CODES_PATH', None),
+                             label_smoothing=0.)
 
-        ds.setOutput(base_path + '/' + params['DESCRIPTION_FILES']['test'],
-                     'test',
-                     type=params['OUTPUTS_TYPES_DATASET'][0],
-                     id=params['OUTPUTS_IDS_DATASET'][0],
-                     build_vocabulary=True,
-                     pad_on_batch=True,
-                     tokenization=params['TOKENIZATION_METHOD'],
-                     sample_weights=params['SAMPLE_WEIGHTS'],
-                     max_text_len=params['MAX_OUTPUT_TEXT_LEN_TEST'],
-                     min_occ=params['MIN_OCCURRENCES_OUTPUT_VOCAB'])
 
         # INPUT DATA
         # Let's load the associated videos (inputs)
         # we must take into account that in this dataset we have a different number of sentences per video,
         # for this reason we introduce the parameter 'repeat_set'=num_captions, where num_captions is a list
         # containing the number of captions in each video.
-
-        num_captions_train = np.load(base_path + '/' + params['DESCRIPTION_COUNTS_FILES']['train'])
-        num_captions_val = np.load(base_path + '/' + params['DESCRIPTION_COUNTS_FILES']['val'])
-        num_captions_test = np.load(base_path + '/' + params['DESCRIPTION_COUNTS_FILES']['test'])
+        if params['LABELS_PER_SAMPLE'] == 0:
+            num_captions_train = np.load(base_path + '/' + params['DESCRIPTION_COUNTS_FILES']['train'])
+            num_captions_val = np.load(base_path + '/' + params['DESCRIPTION_COUNTS_FILES']['val'])
+            num_captions_test = np.load(base_path + '/' + params['DESCRIPTION_COUNTS_FILES']['test'])
+        else:
+            num_captions_train = params['LABELS_PER_SAMPLE']
+            num_captions_val = params['LABELS_PER_SAMPLE']
+            num_captions_test = params['LABELS_PER_SAMPLE']
 
         for n_feat, feat_type in enumerate(params['FEATURE_NAMES']):
             for split, num_cap in zip(['train', 'val', 'test'],
-                                      [num_captions_train, num_captions_val,
-                                       num_captions_test]):
+                                      [num_captions_train, num_captions_val, num_captions_test]):
                 list_files = base_path + '/' + params['FRAMES_LIST_FILES'][split] % feat_type
-                counts_files = base_path + '/' + params['FRAMES_COUNTS_FILES'][split] % feat_type
 
-                ds.setInput([list_files, counts_files],
+                if params['LABELS_PER_SAMPLE'] == 0:
+                    counts_files = base_path + '/' + params['FRAMES_COUNTS_FILES'][split] % feat_type
+                    input_dataset = [list_files, counts_files]
+                else:
+                    input_dataset = list_files
+
+                ds.setInput(input_dataset,
                             split,
                             type=params['INPUTS_TYPES_DATASET'][n_feat],
                             id=params['INPUTS_IDS_DATASET'][0],
                             repeat_set=num_cap,
+                            # video-features parameters
                             max_video_len=params['NUM_FRAMES'],
-                            feat_len=params['IMG_FEAT_SIZE'])
+                            # image-features parameters
+                            feat_len=params['FEATURE_DIMENSION'],
+                            # raw-image parameters
+                            img_size=params['IMG_SIZE'],
+                            img_size_crop=params['IMG_CROP_SIZE'],
+
+                            )
 
         if len(params['INPUTS_IDS_DATASET']) > 1:
             ds.setInput(base_path + '/' + params['DESCRIPTION_FILES']['train'],
@@ -229,7 +240,6 @@ def build_dataset(params):
     return ds
 
 
-
 def keep_n_captions(ds, repeat, n=1, set_names=None):
     """
     Keeps only n captions per image and stores the rest in dictionaries for a later evaluation
@@ -245,7 +255,6 @@ def keep_n_captions(ds, repeat, n=1, set_names=None):
 
     for s, r in zip(set_names, repeat):
         logging.info('Keeping ' + str(n) + ' captions per input on the ' + str(s) + ' set.')
-
         ds.extra_variables[s] = dict()
         n_samples = getattr(ds, 'len_' + s)
         # Process inputs
@@ -254,21 +263,31 @@ def keep_n_captions(ds, repeat, n=1, set_names=None):
             if id_in in ds.optional_inputs:
                 try:
                     X = getattr(ds, 'X_' + s)
-                    i = 0
-                    for next_repeat in r:
-                        for j in range(n):
-                            new_X.append(X[id_in][i+j])
-                    i += next_repeat
+                    if not isinstance(r, int):
+                        i = 0
+                        for next_repeat in r:
+                            for j in range(n):
+                                new_X.append(X[id_in][i + j])
+                            i += next_repeat
+                    else:
+                        for i in range(0, n_samples, r):
+                            for j in range(n):
+                                new_X.append(X[id_in][i + j])
                     setattr(ds, 'X_' + s + '[' + id_in + ']', new_X)
                 except Exception:
                     pass
             else:
                 X = getattr(ds, 'X_' + s)
-                i = 0
-                for next_repeat in r:
-                    for j in range(n):
-                        new_X.append(X[id_in][i + j])
-                    i += next_repeat
+                if not isinstance(r, int):
+                    i = 0
+                    for next_repeat in r:
+                        for j in range(n):
+                            new_X.append(X[id_in][i + j])
+                        i += next_repeat
+                else:
+                    for i in range(0, n_samples, r):
+                        for j in range(n):
+                            new_X.append(X[id_in][i + j])
                 aux_list = getattr(ds, 'X_' + s)
                 aux_list[id_in] = new_X
                 setattr(ds, 'X_' + s, aux_list)
@@ -279,15 +298,25 @@ def keep_n_captions(ds, repeat, n=1, set_names=None):
             Y = getattr(ds, 'Y_' + s)
             dict_Y = dict()
             count_samples = 0
-            i = 0
-            for next_repeat in r:
-                dict_Y[count_samples] = []
-                for j in range(next_repeat):
-                    if j < n:
-                        new_Y.append(Y[id_out][i + j])
-                    dict_Y[count_samples].append(Y[id_out][i + j])
-                count_samples += 1
-                i += next_repeat
+            if not isinstance(r, int):
+                i = 0
+                for next_repeat in r:
+                    dict_Y[count_samples] = []
+                    for j in range(next_repeat):
+                        if j < n:
+                            new_Y.append(Y[id_out][i + j])
+                        dict_Y[count_samples].append(Y[id_out][i + j])
+                    count_samples += 1
+                    i += next_repeat
+            else:
+                for i in range(0, n_samples, r):
+                    dict_Y[count_samples] = []
+                    for j in range(r):
+                        if j < n:
+                            new_Y.append(Y[id_out][i + j])
+                        dict_Y[count_samples].append(Y[id_out][i + j])
+                    count_samples += 1
+
             aux_list = getattr(ds, 'Y_' + s)
             aux_list[id_out] = new_Y
             setattr(ds, 'Y_' + s, aux_list)
@@ -298,5 +327,4 @@ def keep_n_captions(ds, repeat, n=1, set_names=None):
 
         new_len = len(new_Y)
         setattr(ds, 'len_' + s, new_len)
-
         logging.info('Samples reduced to ' + str(new_len) + ' in ' + s + ' set.')

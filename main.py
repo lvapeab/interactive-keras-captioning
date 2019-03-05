@@ -4,9 +4,9 @@ import sys
 import argparse
 from timeit import default_timer as timer
 from config import load_parameters
-from video_captioner import check_params
-from video_captioner.training import train_model
-from video_captioner.apply_model import sample_ensemble
+from captioner import check_params
+from captioner.training import train_model
+from captioner.apply_model import sample_ensemble
 
 logging.basicConfig(level=logging.DEBUG, format='[%(asctime)s] %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     if parameters['MODE'] == 'training':
         logging.info('Running training.')
         train_model(parameters)
+        logging.info('Done!')
     elif parameters['MODE'] == 'sampling':
-        logging.info('Running sampling.')
-        sample_ensemble(parameters)
-    logging.info('Done!')
+        logging.error('Depecrated function. For sampling from a trained model, please run caption.py.')
+        exit(2)

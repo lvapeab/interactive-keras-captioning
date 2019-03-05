@@ -10,7 +10,7 @@ Two different kinds of inputs can be used for training the video description mod
 
 ## Folder structure
 
-Following we describe the desired folder structure for storing the dataset-related information:
+We should follow this folder structure for storing the dataset-related information:
 
     ./Images
         video_[video_id]

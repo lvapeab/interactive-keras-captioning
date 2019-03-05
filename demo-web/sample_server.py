@@ -27,8 +27,8 @@ from keras_wrapper.cnn_model import loadModel, updateModel
 from keras_wrapper.dataset import loadDataset
 from keras_wrapper.extra.read_write import pkl2dict, list2file
 from keras_wrapper.utils import decode_predictions_beam_search
-from video_captioner.model_zoo import VideoDesc_Model
-from video_captioner.online_models import build_online_models
+from captioner.model_zoo import Captioning_Model
+from captioner.online_models import build_online_models
 from utils.utils import update_parameters
 
 
@@ -455,7 +455,7 @@ def main():
         }
         # Load trainable model(s)
         logging.info('Loading models from %s' % str(args.models))
-        model_instances = [VideoDesc_Model(parameters,
+        model_instances = [Captioning_Model(parameters,
                                             model_type=parameters['MODEL_TYPE'],
                                             verbose=parameters['VERBOSE'],
                                             model_name=parameters['MODEL_NAME'] + '_' + str(i),
@@ -490,7 +490,7 @@ def main():
                          'normalize_probs': parameters['NORMALIZE_SAMPLING'],
                          'alpha_factor': parameters['ALPHA_FACTOR'],
                          'normalize': parameters.get('NORMALIZATION', False),
-                         'normalization_type': parameters.get('NORMALIZATION_TYPE', False),
+                         'normalization_type': parameters.get('NORMALIZATION_TYPE', None),
                          'data_augmentation': parameters.get('DATA_AUGMENTATION', False),
                          'mean_substraction': parameters.get('MEAN_SUBTRACTION', False),
                          'wo_da_patch_type': parameters.get('WO_DA_PATCH_TYPE', 'whole'),

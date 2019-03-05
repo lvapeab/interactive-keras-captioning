@@ -5,8 +5,8 @@ from keras import backend as K
 
 from config import load_parameters
 from data_engine.prepare_data import build_dataset
-from video_captioner.training import train_model
-from video_captioner.apply_model import sample_ensemble
+from captioner.training import train_model
+from captioner.apply_model import sample_ensemble
 
 
 def load_tests_params():

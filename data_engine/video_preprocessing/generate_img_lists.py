@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import print_function
 import glob
 
 base_path = '/media/HDD_2TB/DATASETS/MSVD/'
@@ -14,7 +16,7 @@ counts_lists = ['train_imgs_counts.txt', 'val_imgs_counts.txt',
                 'test_imgs_counts.txt']
 
 # Code
-print 'Listing all images from all videos...'
+print ('Listing all images from all videos...')
 
 len_base = len(base_path)
 for s, o, c in zip(split_lists, out_lists, counts_lists):
@@ -33,4 +35,4 @@ for s, o, c in zip(split_lists, out_lists, counts_lists):
     o.close()
     c.close()
 
-print 'Done!'
+print ('Done!')

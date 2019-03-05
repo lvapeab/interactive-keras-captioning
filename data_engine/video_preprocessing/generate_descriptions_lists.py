@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import print_function
 import numpy as np
 
 
@@ -46,8 +48,8 @@ def main():
     desc_splits = []
     counts_splits = []
     for i_s, s in enumerate(splits):
-        desc_splits.append([[] for i in range(len(img_splits[i_s]))])
-        counts_splits.append([0 for i in range(len(img_splits[i_s]))])
+        desc_splits.append([[] for _ in range(len(img_splits[i_s]))])
+        counts_splits.append([0 for _ in range(len(img_splits[i_s]))])
     with open(base_path + text, 'r') as f:
         for line in f:
             line = line.rstrip('\n')
@@ -58,16 +60,16 @@ def main():
 
             found = False
             i = 0
-            while (not found and i < len(splits)):
-                if (img in img_splits[i]):
+            while not found and i < len(splits):
+                if img in img_splits[i]:
                     found = True
                     idx = img_splits[i].index(img)
                     desc_splits[i][idx].append(desc)
                     counts_splits[i][idx] += 1
                 i += 1
 
-            if (not found):
-                print 'Warning: Video ' + img + ' does not exist in lists'
+            if not found:
+                print ('Warning: Video ' + img + ' does not exist in lists')
 
     # write descriptions in separate files
     for f, d in zip(splits_out, desc_splits):
@@ -81,7 +83,7 @@ def main():
     for c, s in zip(counts_splits, splits_counts):
         np.save(base_path + s, c)
 
-    print 'Done'
+    print ('Done')
 
 
 main()

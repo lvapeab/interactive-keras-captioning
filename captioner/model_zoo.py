@@ -40,7 +40,7 @@ def getPositionalEncodingWeights(input_dim, output_dim, name='', verbose=True):
     return [position_enc]
 
 
-class VideoDesc_Model(Model_Wrapper):
+class Captioning_Model(Model_Wrapper):
     """
     Translation model class. Instance of the Model_Wrapper class (see staged_keras_wrapper).
 
@@ -58,12 +58,12 @@ class VideoDesc_Model(Model_Wrapper):
     :param bool clear_dirs: Clean model directories or not.
     """
 
-    def __init__(self, params, model_type='VideoDesc_Model', verbose=1,
+    def __init__(self, params, model_type='Captioning_Model', verbose=1,
                  structure_path=None, weights_path=None,
                  model_name=None, vocabularies=None, store_path=None,
                  set_optimizer=True, clear_dirs=True):
         """
-            VideoDesc_Model object constructor.
+            Captioning_Model object constructor.
         :param params: all hyperparams of the model.
         :param model_type: network name type (corresponds to any method defined in the section 'MODELS' of this class).
                      Only valid if 'structure_path' == None.
@@ -78,11 +78,11 @@ class VideoDesc_Model(Model_Wrapper):
         :param clear_dirs: Clean model directories or not.
 
         """
-        super(VideoDesc_Model, self).__init__(model_type=model_type,
-                                              model_name=model_name,
-                                              silence=verbose == 0,
-                                              models_path=store_path,
-                                              inheritance=True)
+        super(Captioning_Model, self).__init__(model_type=model_type,
+                                               model_name=model_name,
+                                               silence=verbose == 0,
+                                               models_path=store_path,
+                                               inheritance=True)
 
         self.__toprint = ['_model_type', 'name', 'model_path', 'verbose']
 
@@ -132,11 +132,11 @@ class VideoDesc_Model(Model_Wrapper):
             if hasattr(self, model_type):
                 if self.verbose > 0:
                     logging.info(
-                        "<<< Building " + model_type + " Video_Captioning_Model >>>")
+                        "<<< Building " + model_type + " Captioning_Model >>>")
                 eval('self.' + model_type + '(params)')
             else:
                 raise Exception(
-                    'Video_Captioning_Model type "' + model_type + '" is not implemented.')
+                    'Captioning_Model type "' + model_type + '" is not implemented.')
 
         # Load weights from file
         if weights_path:
@@ -455,18 +455,37 @@ class VideoDesc_Model(Model_Wrapper):
         :return:
         """
 
-        # Video model
-        video = Input(name=self.ids_inputs[0],
-                      shape=tuple([params['NUM_FRAMES'], params['IMG_FEAT_SIZE']]))
-        input_video = video
-        ##################################################################
-        #                       ENCODER
-        ##################################################################
+        # Image model
+        if 'image' in params['INPUT_DATA_TYPE']:
+            if 'raw-image' in params['INPUT_DATA_TYPE']:
+                # Load InceptionV3 model pre-trained on ImageNet
+                image_model = InceptionV3(weights='imagenet')
+                # Recover last convolutional layer from original model: 'mixed10'
+                model_input = image_model.get_layer('mixed10').output
+
+            elif 'image-features' in params['INPUT_DATA_TYPE']:
+                model_input = Input(name=self.ids_inputs[0], shape=tuple(params['FEATURE_DIMENSION']))
+                # Reshape ctx and permute image vector for
+                # putting together all spatial dimensions
+                image = Lambda(lambda x: K.reshape(x, tuple([-1, x.shape[1]] + [x.shape[2] * x.shape[3]])),
+                               output_shape=lambda s: tuple([None, s[1], s[2] * s[3]]),
+                               name='lambda_reshape_image')(model_input)
+                image = Lambda(lambda x: K.permute_dimensions(x, [0, 2, 1]),
+                                 output_shape=lambda s: tuple([s[0], s[2], s[1]]),
+                                 name='lambda_permute_image')(image)
+            input_object = image
+        else:
+            # Video model
+            model_input = Input(name=self.ids_inputs[0],
+                          shape=tuple([params['NUM_FRAMES'], params['FEATURE_DIMENSION']]))
+            input_object = model_input
+
+        # ENCODER
         for activation, dimension in params['IMG_EMBEDDING_LAYERS']:
-            input_video = TimeDistributed(
-                Dense(dimension, name='%s_1' % activation, activation=activation,
-                      kernel_regularizer=l2(params['WEIGHT_DECAY'])))(input_video)
-            input_video = Regularize(input_video, params, name='%s_1' % activation)
+            input_object = TimeDistributed(Dense(dimension, name='%s_1' % activation,
+                                                 activation=activation,
+                                                 kernel_regularizer=l2(params['WEIGHT_DECAY'])))(input_object)
+            input_object = Regularize(input_object, params, name='%s_1' % activation)
 
         if params['RNN_ENCODER_HIDDEN_SIZE'] > 0:
             if params['BIDIRECTIONAL_ENCODER']:
@@ -481,7 +500,7 @@ class VideoDesc_Model(Model_Wrapper):
                                                                       return_sequences=True),
                     trainable=params.get('TRAINABLE_ENCODER', True),
                     name='bidirectional_encoder_' + params['ENCODER_RNN_TYPE'],
-                    merge_mode=params.get('BIDIRECTIONAL_MERGE_MODE', 'concat'))(input_video)
+                    merge_mode=params.get('BIDIRECTIONAL_MERGE_MODE', 'concat'))(input_object)
             else:
                 encoder = eval(self.use_CuDNN + params['ENCODER_RNN_TYPE'])(params['RNN_ENCODER_HIDDEN_SIZE'],
                                                                             kernel_regularizer=l2(params['RECURRENT_WEIGHT_DECAY']),
@@ -491,9 +510,9 @@ class VideoDesc_Model(Model_Wrapper):
                                                                             recurrent_initializer=params['INNER_INIT'],
                                                                             trainable=params.get('TRAINABLE_ENCODER', True),
                                                                             return_sequences=True,
-                                                                            name='encoder_' + params['ENCODER_RNN_TYPE'])(input_video)
-            input_video = Concatenate(axis=2)([input_video, encoder])
-            input_video = Regularize(input_video, params, name='input_video')
+                                                                            name='encoder_' + params['ENCODER_RNN_TYPE'])(input_object)
+            input_object = Concatenate(axis=2)([input_object, encoder])
+            input_object = Regularize(input_object, params, name='input_object')
 
             # 2.3. Potentially deep encoder
             for n_layer in range(1, params['N_LAYERS_ENCODER']):
@@ -508,7 +527,7 @@ class VideoDesc_Model(Model_Wrapper):
                                                                                                           return_sequences=True),
                                                         trainable=params.get('TRAINABLE_ENCODER', True),
                                                         name='bidirectional_encoder_' + params['ENCODER_RNN_TYPE'],
-                                                        merge_mode=params.get('BIDIRECTIONAL_MERGE_MODE', 'concat'))(input_video)
+                                                        merge_mode=params.get('BIDIRECTIONAL_MERGE_MODE', 'concat'))(input_object)
                 else:
                     current_input_video = eval(
                         self.use_CuDNN + params['ENCODER_RNN_TYPE'])(params['RNN_ENCODER_HIDDEN_SIZE'],
@@ -519,10 +538,10 @@ class VideoDesc_Model(Model_Wrapper):
                                                                      recurrent_initializer=params['INNER_INIT'],
                                                                      trainable=params.get('TRAINABLE_ENCODER', True),
                                                                      return_sequences=True,
-                                                                     name='encoder_' + params['ENCODER_RNN_TYPE'])(input_video)
+                                                                     name='encoder_' + params['ENCODER_RNN_TYPE'])(input_object)
 
                 current_input_video = Regularize(current_input_video, params, name='input_video_' + str(n_layer))
-                input_video = Sum()([input_video, current_input_video])
+                input_object = Sum()([input_object, current_input_video])
 
         # 3. Decoder
         # 3.1.1. Previously generated words as inputs for training -> Teacher forcing
@@ -546,8 +565,8 @@ class VideoDesc_Model(Model_Wrapper):
         state_below = Regularize(state_below, params, name='state_below')
 
         ctx_mean = Lambda(lambda x: K.mean(x, axis=1),
-                          output_shape=lambda s: (s[0], s[2]), name='lambda_mean')(
-            input_video)
+                          output_shape=lambda s: (s[0], s[2]), name='lambda_mean')(input_object)
+
         if len(params['INIT_LAYERS']) > 0:
             for n_layer_init in range(len(params['INIT_LAYERS']) - 1):
                 ctx_mean = Dense(params['RNN_DECODER_HIDDEN_SIZE'],
@@ -567,7 +586,7 @@ class VideoDesc_Model(Model_Wrapper):
                                   trainable=params.get('TRAINABLE_DECODER', True),
                                   activation=params['INIT_LAYERS'][-1])(ctx_mean)
             initial_state = Regularize(initial_state, params, name='initial_state')
-            input_attentional_decoder = [state_below, input_video, initial_state]
+            input_attentional_decoder = [state_below, input_object, initial_state]
 
             if 'LSTM' in params['DECODER_RNN_TYPE']:
                 initial_memory = Dense(params['RNN_DECODER_HIDDEN_SIZE'],
@@ -581,7 +600,7 @@ class VideoDesc_Model(Model_Wrapper):
                 input_attentional_decoder.append(initial_memory)
         else:
             # Initialize to zeros vector
-            input_attentional_decoder = [state_below, input_video]
+            input_attentional_decoder = [state_below, input_object]
             initial_state = ZeroesLayer(params['RNN_DECODER_HIDDEN_SIZE'])(ctx_mean)
             input_attentional_decoder.append(initial_state)
             if 'LSTM' in params['DECODER_RNN_TYPE']:
@@ -742,7 +761,7 @@ class VideoDesc_Model(Model_Wrapper):
                                          name=self.ids_outputs[0])
         softout = shared_FC_soft(out_layer)
 
-        self.model = Model(inputs=[video, next_words],
+        self.model = Model(inputs=[model_input, next_words],
                            outputs=softout,
                            name=self.name + '_training')
 
@@ -763,8 +782,8 @@ class VideoDesc_Model(Model_Wrapper):
         if params['BEAM_SEARCH']:
             # First, we need a model that outputs the preprocessed input + initial h state
             # for applying the initial forward pass
-            model_init_input = [video, next_words]
-            model_init_output = [softout, input_video] + h_states_list
+            model_init_input = [model_input, next_words]
+            model_init_output = [softout, input_object] + h_states_list
             if 'LSTM' in params['DECODER_RNN_TYPE']:
                 model_init_output += h_memories_list
             if self.return_alphas:
@@ -795,22 +814,29 @@ class VideoDesc_Model(Model_Wrapper):
             #   - next_state
             if params['RNN_ENCODER_HIDDEN_SIZE'] > 0:
                 if params['BIDIRECTIONAL_ENCODER']:
-                    preprocessed_size = params['RNN_ENCODER_HIDDEN_SIZE'] * 2 + params['IMG_FEAT_SIZE']
+                    preprocessed_size = params['RNN_ENCODER_HIDDEN_SIZE'] * 2 + params['FEATURE_DIMENSION']
                 else:
-                    preprocessed_size = params['RNN_ENCODER_HIDDEN_SIZE'] + params['IMG_FEAT_SIZE']
+                    preprocessed_size = params['RNN_ENCODER_HIDDEN_SIZE'] + params['FEATURE_DIMENSION']
             else:
-                preprocessed_size = params['IMG_FEAT_SIZE']
+                if 'image' in params['INPUT_DATA_TYPE']:
+                    preprocessed_size = params['FEATURE_DIMENSION'][0]
+                else:
+                    preprocessed_size = params['FEATURE_DIMENSION']
+            if 'image' in params['INPUT_DATA_TYPE']:
+                elements_per_object = params['FEATURE_DIMENSION'][1] * params['FEATURE_DIMENSION'][2]
+            else:
+                elements_per_object = params['NUM_FRAMES']
+
+            preprocessed_input_object = Input(name='preprocessed_input',
+                                             shape=tuple([elements_per_object, preprocessed_size]))
 
             # Define inputs
             n_deep_decoder_layer_idx = 0
-            preprocessed_input_video = Input(name='preprocessed_input',
-                                             shape=tuple([params['NUM_FRAMES'],
-                                                          preprocessed_size]))
             prev_h_states_list = [Input(name='prev_state_' + str(i),
                                         shape=tuple([params['RNN_DECODER_HIDDEN_SIZE']]))
                                   for i in range(len(h_states_list))]
 
-            input_attentional_decoder = [state_below, preprocessed_input_video,
+            input_attentional_decoder = [state_below, preprocessed_input_object,
                                          prev_h_states_list[
                                              n_deep_decoder_layer_idx]]
 
@@ -874,8 +900,8 @@ class VideoDesc_Model(Model_Wrapper):
             # Softmax
             softout = shared_FC_soft(out_layer)
             model_next_inputs = [next_words,
-                                 preprocessed_input_video] + prev_h_states_list
-            model_next_outputs = [softout, preprocessed_input_video] + h_states_list
+                                 preprocessed_input_object] + prev_h_states_list
+            model_next_outputs = [softout, preprocessed_input_object] + h_states_list
             if 'LSTM' in params['DECODER_RNN_TYPE']:
                 model_next_inputs += prev_h_memories_list
                 model_next_outputs += h_memories_list
@@ -937,27 +963,49 @@ class VideoDesc_Model(Model_Wrapper):
         :return: None
         """
 
-        # Video model
-        video = Input(name=self.ids_inputs[0],
-                      shape=tuple([params['NUM_FRAMES'], params['IMG_FEAT_SIZE']]))
-        input_video = video
-        encoded_video_dimension = params['IMG_FEAT_SIZE']
+        # Image model
+        if 'image' in params['INPUT_DATA_TYPE']:
+            if 'raw-image' in params['INPUT_DATA_TYPE']:
+                # Load InceptionV3 model pre-trained on ImageNet
+                image_model = InceptionV3(weights='imagenet')
+                # Recover last convolutional layer from original model: 'mixed10'
+                model_input = image_model.get_layer('mixed10').output
+
+            elif 'image-features' in params['INPUT_DATA_TYPE']:
+                model_input = Input(name=self.ids_inputs[0], shape=tuple(params['FEATURE_DIMENSION']))
+                # Reshape ctx and permute image vector for
+                # putting together all spatial dimensions
+                image = Lambda(lambda x: K.reshape(x, tuple([-1, x.shape[1]] + [x.shape[2] * x.shape[3]])),
+                               output_shape=lambda s: tuple([None, s[1], s[2] * s[3]]),
+                               name='lambda_reshape_image')(model_input)
+                image = Lambda(lambda x: K.permute_dimensions(x, [0, 2, 1]),
+                                 output_shape=lambda s: tuple([s[0], s[2], s[1]]),
+                                 name='lambda_permute_image')(image)
+            input_object = image
+            encoded_video_dimension = params['FEATURE_DIMENSION'][0]
+
+        else:
+            # Video model
+            model_input = Input(name=self.ids_inputs[0],
+                          shape=tuple([params['NUM_FRAMES'], params['FEATURE_DIMENSION']]))
+            input_object = model_input
+            encoded_video_dimension = params['FEATURE_DIMENSION']
 
         ##################################################################
         #                       ENCODER
         ##################################################################
         for activation, dimension in params['IMG_EMBEDDING_LAYERS']:
-            input_video = TimeDistributed(Dense(dimension,
+            input_object = TimeDistributed(Dense(dimension,
                                                 name='%s_1' % activation,
                                                 activation=activation,
-                                                kernel_regularizer=l2(params['WEIGHT_DECAY'])))(input_video)
-            input_video = Regularize(input_video, params, name='%s_1' % activation)
+                                                kernel_regularizer=l2(params['WEIGHT_DECAY'])))(input_object)
+            input_object = Regularize(input_object, params, name='%s_1' % activation)
             encoded_video_dimension = dimension
 
         if params.get('SCALE_SOURCE_WORD_EMBEDDINGS', False):
-            input_video = SqrtScaling(encoded_video_dimension)(input_video)
+            input_object = SqrtScaling(encoded_video_dimension)(input_object)
 
-        video_positions = RemoveThirdDimension()(input_video)
+        video_positions = RemoveThirdDimension()(input_object)
         video_positions = PositionLayer(name='position_layer_video')(video_positions)
         max_len = params['NUM_FRAMES']
         positional_embedding = Embedding(max_len,
@@ -970,7 +1018,7 @@ class VideoDesc_Model(Model_Wrapper):
                                                                               verbose=self.verbose))
         positional_src_embedding = positional_embedding(video_positions)
 
-        src_residual_multihead = Add(name='add_src_embedding_positional_src_embedding')([input_video, positional_src_embedding])
+        src_residual_multihead = Add(name='add_src_embedding_positional_src_embedding')([input_object, positional_src_embedding])
 
         # Regularize
         src_residual_multihead = Dropout(params['DROPOUT_P'])(src_residual_multihead)
@@ -1211,7 +1259,7 @@ class VideoDesc_Model(Model_Wrapper):
                                          trainable=(params.get('TRAINABLE_DECODER', True) or params.get('TRAIN_ONLY_LAST_LAYER', True)),
                                          name=self.ids_outputs[0])
         softout = shared_FC_soft(out_layer)
-        self.model = Model(inputs=[video, next_words],
+        self.model = Model(inputs=[model_input, next_words],
                            outputs=softout,
                            name=self.name + '_training')
 
@@ -1229,7 +1277,7 @@ class VideoDesc_Model(Model_Wrapper):
         # First, we need a model that outputs the preprocessed input
         # for applying the initial forward pass
 
-        model_init_input = [video, next_words]
+        model_init_input = [model_input, next_words]
         model_init_output = [softout, masked_src_multihead]
 
         self.model_init = Model(inputs=model_init_input,
@@ -1249,6 +1297,9 @@ class VideoDesc_Model(Model_Wrapper):
         #   - softmax probabilities
 
         preprocessed_size = params['MODEL_SIZE']
+        preprocessed_input_object = Input(name='preprocessed_input',
+                                         shape=tuple([elements_per_object, preprocessed_size]))
+
 
         # Define inputs
         preprocessed_annotations = Input(name='preprocessed_input',
@@ -1340,3 +1391,7 @@ class VideoDesc_Model(Model_Wrapper):
         # Input -> Output matchings from model_init to model_next and from model_next to model_next
         self.matchings_init_to_next = {'preprocessed_input': 'preprocessed_input'}
         self.matchings_next_to_next = {'preprocessed_input': 'preprocessed_input'}
+
+
+# Backwards compatibility
+VideoDesc_Model = Captioning_Model

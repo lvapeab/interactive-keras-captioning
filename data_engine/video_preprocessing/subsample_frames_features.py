@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import print_function
+
 import glob
 import os
 import numpy as np
@@ -33,7 +36,7 @@ out_features_counts = ['train_' + out_features_name + '_counts.txt',
 for ff_, fc_, of_, oc_ in zip(features_files, features_counts_files, out_features,
                               out_features_counts):
 
-    print 'Processing file', base_path + '/' + features_path + '/' + ff_
+    print ('Processing file', base_path + '/' + features_path + '/' + ff_)
 
     # Open files
     ff = open(base_path + '/' + features_path + '/' + ff_, 'r')
@@ -62,12 +65,12 @@ for ff_, fc_, of_, oc_ in zip(features_files, features_counts_files, out_feature
             of.write(feats[p])
             oc.write(str(count_pick) + '\n')
             if count_pick != n_frames_per_video_subsample:
-                print "different", count_videos
-                print "num", count_pick
+                print ("different", count_videos)
+                print ("num", count_pick)
 
     ff.close()
     fc.close()
     of.close()
     oc.close()
 
-    print 'Output stored in', base_path + '/' + output_path + '/' + of_
+    print ('Output stored in', base_path + '/' + output_path + '/' + of_)

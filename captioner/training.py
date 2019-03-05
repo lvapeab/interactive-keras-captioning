@@ -16,8 +16,8 @@ from keras_wrapper.cnn_model import saveModel, updateModel
 from keras_wrapper.dataset import loadDataset, saveDataset
 from keras_wrapper.extra.read_write import dict2pkl, file2list
 from data_engine.prepare_data import build_dataset
-from video_captioner.model_zoo import VideoDesc_Model
-from video_captioner.build_callbacks import buildCallbacks
+from captioner.model_zoo import Captioning_Model
+from captioner.build_callbacks import buildCallbacks
 
 
 def train_model(params):
@@ -36,12 +36,12 @@ def train_model(params):
 
     # Build model
     if (params['RELOAD'] == 0):  # build new model
-        video_model = VideoDesc_Model(params,
-                                      model_type=params['MODEL_TYPE'],
-                                      verbose=params['VERBOSE'],
-                                      model_name=params['MODEL_NAME'],
-                                      vocabularies=dataset.vocabulary,
-                                      store_path=params['STORE_PATH'])
+        video_model = Captioning_Model(params,
+                                       model_type=params['MODEL_TYPE'],
+                                       verbose=params['VERBOSE'],
+                                       model_name=params['MODEL_NAME'],
+                                       vocabularies=dataset.vocabulary,
+                                       store_path=params['STORE_PATH'])
         dict2pkl(params, params['STORE_PATH'] + '/config')
 
         # Define the inputs and outputs mapping from our Dataset instance to our model
