@@ -10,10 +10,10 @@ Given an input image or video, we describe its content. [Live demo here](http://
 This library is strongly based on [NMT-Keras](https://github.com/lvapeab/nmt-keras).  
 
 ## Recurrent neural network model with attention
-![alt text](examples/documentation/rnn_model.png "RNN")
+![alt text](docs/rnn_model.png "RNN")
 
 ## Transformer model
-![alt text](examples/documentation/transformer_model.png "Transformer")
+![alt text](docs/transformer_model.png "Transformer")
 
 ## Interactive captioning
 
