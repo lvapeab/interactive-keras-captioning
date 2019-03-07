@@ -3,11 +3,10 @@
 
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
-Interactive multimedia captioning with Keras (Theano and Tensorflow).  
+Interactive multimedia captioning with Keras (Theano and Tensorflow). Given an input image or video, we describe its content.
+ 
+## [See a live demo here](http://casmacat.prhlt.upv.es/invc).
 
-Given an input image or video, we describe its content. [Live demo here](http://casmacat.prhlt.upv.es/invc).
-
-This library is strongly based on [NMT-Keras](https://github.com/lvapeab/nmt-keras).  
 
 ## Recurrent neural network model with attention
 ![alt text](docs/rnn_model.png "RNN")
@@ -102,7 +101,8 @@ In short, if we want to use evaluate the test set from a the dataset `MSVD` with
 
 ### Acknowledgement
 
-Much of this library has been developed together with [Marc Bolaños](https://github.com/MarcBS) ([web page](http://www.ub.edu/cvub/marcbolanos/)) for other sequence-to-sequence problems. 
+
+This library is strongly based on [NMT-Keras](https://github.com/lvapeab/nmt-keras). Much of the library has been developed together with [Marc Bolaños](https://github.com/MarcBS) ([web page](http://www.ub.edu/cvub/marcbolanos/)) for other sequence-to-sequence problems. 
 
 To see other projects following the same philosophy and style of Interactive Keras Captioning, take a look to:
 
