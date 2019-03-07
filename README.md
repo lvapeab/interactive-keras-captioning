@@ -5,7 +5,7 @@
 
 Interactive multimedia captioning with Keras (Theano and Tensorflow). Given an input image or video, we describe its content.
  
-## [See a live demo here](http://casmacat.prhlt.upv.es/invc).
+## [Live demo here](http://casmacat.prhlt.upv.es/invc).
 
 
 ## Recurrent neural network model with attention
