@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-base_path = '/media/HDD_2TB/DATASETS/Flickr8k/'
+base_path = '/home/lvapeab/DATASETS/Flickr8k/'
 
 # Inputs
 split_lists = ['train_list.txt', 'val_list.txt', 'test_list.txt']
