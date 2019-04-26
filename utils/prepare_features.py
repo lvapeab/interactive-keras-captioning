@@ -3,7 +3,7 @@ from keras_wrapper.extra.read_write import create_dir_if_not_exists
 
 # Parameters
 ROOT_PATH = '/media/HDD_2TB/DATASETS/'
-base_path = ROOT_PATH + '/Flickr8k/Features/'
+base_path = ROOT_PATH + '/Flickr30k/Features/'
 features = 'KCNN'  # KCNN, Scenes, Objects
 base_path_save = base_path + features
 
@@ -26,7 +26,7 @@ else:
 def csv2npy():
     # Process each data split separately
     for n, f, fs in zip(names_lists, feats_paths, folders_save):
-        print "Preparing features %s" % f
+        print ("Preparing features %s" % f)
         feats_dict = dict()
         # Get file names
         names = []
@@ -45,10 +45,9 @@ def csv2npy():
                 feats_dict[names[i]] = feats[:n_feats]
 
         # Store dict
-        print "Saving features in %s" % (base_path_save + '/' + fs + '/' + file_save + '.npy')
+        print ("Saving features in %s" % (base_path_save + '/' + fs + '/' + file_save + '.npy'))
         create_dir_if_not_exists(base_path_save + '/' + fs)
         np.save(base_path_save + '/' + fs + '/' + file_save + '.npy', feats_dict)
-        print
 
 
 if __name__ == "__main__":
