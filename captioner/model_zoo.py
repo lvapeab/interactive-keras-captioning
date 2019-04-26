@@ -8,8 +8,6 @@ import os
 import logging
 import sys
 
-from theano.gof.graph import inputs
-
 from keras.layers import *
 from keras.models import model_from_json, Model
 from keras.utils import multi_gpu_model
@@ -85,7 +83,6 @@ class Captioning_Model(Model_Wrapper):
                                                inheritance=True)
 
         self.__toprint = ['_model_type', 'name', 'model_path', 'verbose']
-
         self.verbose = verbose
         self._model_type = model_type
         self.params = params
@@ -98,6 +95,7 @@ class Captioning_Model(Model_Wrapper):
 
         self.use_CuDNN = 'CuDNN' if K.backend() == 'tensorflow' and params.get(
             'USE_CUDNN', True) else ''
+        self.multi_gpu_model = None
 
         # Prepare target word embedding
         if params['TRG_PRETRAINED_VECTORS'] is not None:

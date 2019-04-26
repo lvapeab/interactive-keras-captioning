@@ -24,6 +24,6 @@ create_dir_if_not_exists(base_path + '/' + path_lists + '/' + features_name)
 for split in ['train', 'val', 'test']:
     print ('Processing split', split)
     ids = file2list(base_path + '/' + path_lists + '/' + ID_LISTS[split])
-    new_ids = [path_features + '/' + sample_id + feature_extension for sample_id in ids]
+    new_ids = [path_features + '/' + split + '/' + sample_id + feature_extension for sample_id in ids]
     list2file(base_path + '/' + path_lists + '/' + OUT_FEATURES_LISTS[split], new_ids)
 print ('Done!')

@@ -462,9 +462,9 @@ def interactive_simulation():
                                                 "\t Split: %s \n" \
                                                 "\t Sentence: %d \n" \
                                                 "\t Hypothesis: %s\n" \
-                                                "\t Reference: %s" % (str(s.encode('utf-8')), n_sample + 1,
-                                                                      hypothesis.encode('utf-8'),
-                                                                      reference.encode('utf-8'))
+                                                "\t Reference: %s" % (s, n_sample + 1,
+                                                                      hypothesis,
+                                                                      reference)
                 # 3. Update user effort counters
                 mouse_actions_sentence += 1  # This +1 is the validation action
                 chars_sentence = len(hypothesis)
