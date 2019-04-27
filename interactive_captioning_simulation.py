@@ -122,9 +122,9 @@ def generate_constrained_hypothesis(beam_searcher, src_seq, fixed_words_user, pa
             for ii in range(i + 1, len(unk_words)):
                 hypothesis.append(unk_words[ii])
         else:  # We put each unknown word in the corresponding gap
-            for i, index in enumerate(unk_indices):
+            for i, index in list(enumerate(unk_indices)):
                 if index < len(hypothesis):
-                    hypothesis[index] = unk_words[i]
+                    hypothesis[index] = list(unk_words)[i]
                 else:
                     hypothesis.append(unk_words[i])
 
@@ -458,7 +458,7 @@ def interactive_simulation():
                         logger.debug(u"Cutting hypothesis")
 
                 # 2.4 Security assertion
-                assert hypothesis == reference, "Error: The final hypothesis does not match with the reference! \n" \
+                assert hypothesis in references, "Error: The final hypothesis does not match with the reference! \n" \
                                                 "\t Split: %s \n" \
                                                 "\t Sentence: %d \n" \
                                                 "\t Hypothesis: %s\n" \
