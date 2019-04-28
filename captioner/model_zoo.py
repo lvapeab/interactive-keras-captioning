@@ -808,14 +808,16 @@ class Captioning_Model(Model_Wrapper):
             # and the following outputs:
             #   - softmax probabilities
             #   - next_state
+            feature_dimension =  params['FEATURE_DIMENSION'][0] if not params['IMG_EMBEDDING_LAYERS'] else params['IMG_EMBEDDING_LAYERS'][-1][-1]
+            
             if params['RNN_ENCODER_HIDDEN_SIZE'] > 0:
                 if params['BIDIRECTIONAL_ENCODER']:
-                    preprocessed_size = params['RNN_ENCODER_HIDDEN_SIZE'] * 2 + params['FEATURE_DIMENSION']
+                    preprocessed_size = params['RNN_ENCODER_HIDDEN_SIZE'] * 2 + feature_dimension
                 else:
-                    preprocessed_size = params['RNN_ENCODER_HIDDEN_SIZE'] + params['FEATURE_DIMENSION']
+                    preprocessed_size = params['RNN_ENCODER_HIDDEN_SIZE'] + feature_dimension
             else:
                 if 'image' in params['INPUT_DATA_TYPE']:
-                    preprocessed_size = params['FEATURE_DIMENSION'][0]
+                    preprocessed_size = feature_dimension
                 else:
                     preprocessed_size = params['FEATURE_DIMENSION']
             if 'image' in params['INPUT_DATA_TYPE']:
