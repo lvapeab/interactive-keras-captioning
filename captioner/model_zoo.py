@@ -362,18 +362,6 @@ class Captioning_Model(Model_Wrapper):
                                  '\n\t DAMPENING: ' + str(self.params.get('DAMPENING', 0.0)) + \
                                  '\n\t NESTEROV: ' + str(self.params.get('NESTEROV_MOMENTUM', False))
 
-            elif self.params['OPTIMIZER'].lower() == 'adadeltahd':
-                optimizer = AdadeltaHD(lr=self.params.get('LR', 0.002),
-                                       hypergrad_lr=self.params.get('HYPERGRAD_LR', 0.001),
-                                       rho=self.params.get('RHO', 0.9),
-                                       decay=self.params.get('LR_OPTIMIZER_DECAY', 0.0),
-                                       epsilon=self.params.get('EPSILON', 1e-7),
-                                       clipnorm=self.params.get('CLIP_C', 10.),
-                                       clipvalue=self.params.get('CLIP_V', 0.))
-                optimizer_str += '\n\t HYPERGRAD_LR: ' + str(self.params.get('HYPERGRAD_LR', 0.001)) + \
-                                 '\n\t RHO: ' + str(self.params.get('RHO', 0.9)) + \
-                                 '\n\t EPSILON: ' + str(self.params.get('EPSILON', 1e-7))
-
             elif self.params['OPTIMIZER'].lower() == 'adamhd':
                 optimizer = AdamHD(lr=self.params.get('LR', 0.002),
                                    hypergrad_lr=self.params.get('HYPERGRAD_LR', 0.001),
@@ -457,7 +445,8 @@ class Captioning_Model(Model_Wrapper):
         if 'image' in params['INPUT_DATA_TYPE']:
             if 'raw-image' in params['INPUT_DATA_TYPE']:
                 # Load InceptionV3 model pre-trained on ImageNet
-                image_model = InceptionV3(weights='imagenet')
+                from keras_applications.inception_v3 import InceptionV3
+                image_model = InceptionV3(include_top=False, weights='imagenet')
                 # Recover last convolutional layer from original model: 'mixed10'
                 model_input = image_model.get_layer('mixed10').output
 
@@ -546,17 +535,14 @@ class Captioning_Model(Model_Wrapper):
         next_words = Input(name=self.ids_inputs[1], batch_shape=tuple([None, None]),
                            dtype='int32')
         # 3.1.2. Target word embedding
-        if params.get('TIE_EMBEDDINGS', False):
-            state_below = embedding(next_words)
-        else:
-            state_below = Embedding(params['OUTPUT_VOCABULARY_SIZE'],
-                                    params['TARGET_TEXT_EMBEDDING_SIZE'],
-                                    name='target_word_embedding',
-                                    embeddings_regularizer=l2(params['WEIGHT_DECAY']),
-                                    embeddings_initializer=params['INIT_FUNCTION'],
-                                    trainable=self.trg_embedding_weights_trainable,
-                                    weights=self.trg_embedding_weights,
-                                    mask_zero=True)(next_words)
+        state_below = Embedding(params['OUTPUT_VOCABULARY_SIZE'],
+                                params['TARGET_TEXT_EMBEDDING_SIZE'],
+                                name='target_word_embedding',
+                                embeddings_regularizer=l2(params['WEIGHT_DECAY']),
+                                embeddings_initializer=params['INIT_FUNCTION'],
+                                trainable=self.trg_embedding_weights_trainable,
+                                weights=self.trg_embedding_weights,
+                                mask_zero=True)(next_words)
 
         if params.get('SCALE_TARGET_WORD_EMBEDDINGS', False):
             state_below = SqrtScaling(params['TARGET_TEXT_EMBEDDING_SIZE'])(state_below)
@@ -957,7 +943,7 @@ class Captioning_Model(Model_Wrapper):
 
         .. _Attention Is All You Need: https://arxiv.org/abs/1706.03762
 
-        :param int params: Dictionary of params (see config.py)
+        :param dict params: Dictionary of params (see config.py)
         :return: None
         """
 
@@ -965,7 +951,8 @@ class Captioning_Model(Model_Wrapper):
         if 'image' in params['INPUT_DATA_TYPE']:
             if 'raw-image' in params['INPUT_DATA_TYPE']:
                 # Load InceptionV3 model pre-trained on ImageNet
-                image_model = InceptionV3(weights='imagenet')
+                from keras_applications.inception_v3 import InceptionV3
+                image_model = InceptionV3(include_top=False, weights='imagenet')
                 # Recover last convolutional layer from original model: 'mixed10'
                 model_input = image_model.get_layer('mixed10').output
 
@@ -980,14 +967,14 @@ class Captioning_Model(Model_Wrapper):
                                  output_shape=lambda s: tuple([s[0], s[2], s[1]]),
                                  name='lambda_permute_image')(image)
             input_object = image
-            encoded_video_dimension = params['FEATURE_DIMENSION'][0]
+            encoded_object_dimension = params['FEATURE_DIMENSION'][0]
             max_len = params['FEATURE_DIMENSION'][1] * params['FEATURE_DIMENSION'][2]
         else:
             # Video model
             model_input = Input(name=self.ids_inputs[0],
                           shape=tuple([params['NUM_FRAMES'], params['FEATURE_DIMENSION']]))
             input_object = model_input
-            encoded_video_dimension = params['FEATURE_DIMENSION']
+            encoded_object_dimension = params['FEATURE_DIMENSION']
             max_len = params['NUM_FRAMES']
 
         # ENCODER
@@ -997,23 +984,23 @@ class Captioning_Model(Model_Wrapper):
                                                 activation=activation,
                                                 kernel_regularizer=l2(params['WEIGHT_DECAY'])))(input_object)
             input_object = Regularize(input_object, params, name='%s_1' % activation)
-            encoded_video_dimension = dimension
+            encoded_object_dimension = dimension
 
         if params.get('SCALE_SOURCE_WORD_EMBEDDINGS', False):
-            input_object = SqrtScaling(encoded_video_dimension)(input_object)
+            input_object = SqrtScaling(encoded_object_dimension)(input_object)
 
-        video_positions = RemoveThirdDimension()(input_object)
-        video_positions = PositionLayer(name='position_layer_video')(video_positions)
+        input_sequence_positions = RemoveThirdDimension()(input_object)
+        input_sequence_positions = PositionLayer(name='position_layer_video')(input_sequence_positions)
 
         positional_embedding = Embedding(max_len,
-                                         encoded_video_dimension,
+                                         encoded_object_dimension,
                                          name='positional_video_embedding',
                                          trainable=False,
                                          weights=getPositionalEncodingWeights(max_len,
-                                                                              encoded_video_dimension,
+                                                                              encoded_object_dimension,
                                                                               name='positional_video_embedding',
                                                                               verbose=self.verbose))
-        positional_src_embedding = positional_embedding(video_positions)
+        positional_src_embedding = positional_embedding(input_sequence_positions)
 
         src_residual_multihead = Add(name='add_src_embedding_positional_src_embedding')([input_object, positional_src_embedding])
 
@@ -1021,7 +1008,7 @@ class Captioning_Model(Model_Wrapper):
         src_residual_multihead = Dropout(params['DROPOUT_P'])(src_residual_multihead)
 
         prev_src_residual_multihead = src_residual_multihead
-        add_first = params['MODEL_SIZE'] == encoded_video_dimension
+        add_first = params['MODEL_SIZE'] == encoded_object_dimension
         # Left tranformer block (encoder)
         for n_block in range(params['N_LAYERS_ENCODER']):
             src_multihead = MultiHeadAttention(params['N_HEADS'],
@@ -1040,8 +1027,7 @@ class Captioning_Model(Model_Wrapper):
             src_multihead = BatchNormalization(mode=1, name='src_Normalization_MultiHeadAttention_' + str(n_block))(src_multihead)
 
             # FF
-            ff_src_multihead = TimeDistributed(
-                PositionwiseFeedForwardDense(params['FF_SIZE']))(src_multihead)
+            ff_src_multihead = TimeDistributed(PositionwiseFeedForwardDense(params['FF_SIZE']))(src_multihead)
             # Regularize
             ff_src_multihead = Dropout(params['DROPOUT_P'])(ff_src_multihead)
 
@@ -1062,17 +1048,14 @@ class Captioning_Model(Model_Wrapper):
         next_words_positions = PositionLayer(name='position_layer_next_words')(next_words)
 
         # 3.1.2. Target word embedding
-        if params.get('TIE_EMBEDDINGS', False):
-            state_below = embedding(next_words)
-        else:
-            state_below = Embedding(params['OUTPUT_VOCABULARY_SIZE'],
-                                    params['TARGET_TEXT_EMBEDDING_SIZE'],
-                                    name='target_word_embedding',
-                                    embeddings_regularizer=l2(params['WEIGHT_DECAY']),
-                                    embeddings_initializer=params['INIT_FUNCTION'],
-                                    trainable=self.trg_embedding_weights_trainable,
-                                    weights=self.trg_embedding_weights,
-                                    mask_zero=True)(next_words)
+        state_below = Embedding(params['OUTPUT_VOCABULARY_SIZE'],
+                                params['TARGET_TEXT_EMBEDDING_SIZE'],
+                                name='target_word_embedding',
+                                embeddings_regularizer=l2(params['WEIGHT_DECAY']),
+                                embeddings_initializer=params['INIT_FUNCTION'],
+                                trainable=self.trg_embedding_weights_trainable,
+                                weights=self.trg_embedding_weights,
+                                mask_zero=True)(next_words)
 
         if params.get('SCALE_TARGET_WORD_EMBEDDINGS', False):
             state_below = SqrtScaling(params['MODEL_SIZE'])(state_below)
@@ -1197,7 +1180,7 @@ class Captioning_Model(Model_Wrapper):
             trg_multihead_norm = shared_trg_norm_multihead_list[n_block](trg_multihead_add)
 
             # Second Multi-Head Attention block
-            src_trg_multihead = shared_src_trg_multihead_list[n_block]([trg_multihead_norm,  # Queries from the previous decoder layer.
+            src_trg_multihead = shared_src_trg_multihead_list[n_block]([trg_multihead_norm,   # Queries from the previous decoder layer.
                                                                         masked_src_multihead  # Keys and values from the output of the encoder.
                                                                         ])
 
@@ -1291,7 +1274,12 @@ class Captioning_Model(Model_Wrapper):
         # and the following outputs:
         #   - softmax probabilities
 
-        preprocessed_size = params['MODEL_SIZE']
+        if params['N_LAYERS_ENCODER'] > 0:
+            preprocessed_size = params['MODEL_SIZE']
+        elif params['IMG_EMBEDDING_LAYERS']:
+            preprocessed_size = params['IMG_EMBEDDING_LAYERS'][-1][-1]
+        else:
+            preprocessed_size = encoded_object_dimension
 
         # Define inputs
         preprocessed_annotations = Input(name='preprocessed_input',
@@ -1303,54 +1291,43 @@ class Captioning_Model(Model_Wrapper):
         # RIGHT TRANSFORMER BLOCK
         for n_block in range(params['N_LAYERS_DECODER']):
             # Masked Multi-Head Attention block
-            trg_multihead = shared_trg_multihead_list[n_block](
-                [prev_state_below, prev_state_below])
+            trg_multihead = shared_trg_multihead_list[n_block]([prev_state_below, prev_state_below])
 
             # Regularize
-            trg_multihead_dropout = shared_trg_dropout_multihead_list[n_block](
-                trg_multihead)
+            trg_multihead_dropout = shared_trg_dropout_multihead_list[n_block](trg_multihead)
 
             # Add
-            trg_multihead_add = shared_trg_add_multihead_list[n_block](
-                [prev_state_below, trg_multihead_dropout])
+            trg_multihead_add = shared_trg_add_multihead_list[n_block]([prev_state_below, trg_multihead_dropout])
 
             # And norm
-            trg_multihead_norm = shared_trg_norm_multihead_list[n_block](
-                trg_multihead_add)
+            trg_multihead_norm = shared_trg_norm_multihead_list[n_block](trg_multihead_add)
 
             # Second Multi-Head Attention block
-            src_trg_multihead = shared_src_trg_multihead_list[n_block](
-                [trg_multihead_norm,
-                 preprocessed_annotations])
+            src_trg_multihead = shared_src_trg_multihead_list[n_block]([trg_multihead_norm,
+                                                                        preprocessed_annotations])
 
             # Regularize
-            src_trg_multihead_dropout = shared_src_trg_dropout_multihead_list[
-                n_block](src_trg_multihead)
+            src_trg_multihead_dropout = shared_src_trg_dropout_multihead_list[n_block](src_trg_multihead)
 
             # Add
-            src_trg_multihead_add = shared_src_trg_add_multihead_list[n_block](
-                [src_trg_multihead_dropout,
-                 trg_multihead_norm])
+            src_trg_multihead_add = shared_src_trg_add_multihead_list[n_block]([src_trg_multihead_dropout,
+                                                                                trg_multihead_norm])
 
             # And norm
-            src_trg_multihead_norm = shared_src_trg_norm_multihead_list[n_block](
-                src_trg_multihead_add)
+            src_trg_multihead_norm = shared_src_trg_norm_multihead_list[n_block](src_trg_multihead_add)
 
             # FF
             ff_src_trg_multihead = shared_ff_list[n_block](src_trg_multihead_norm)
 
             # Regularize
-            ff_src_trg_multihead_dropout = shared_dropout_ff_list[n_block](
-                ff_src_trg_multihead)
+            ff_src_trg_multihead_dropout = shared_dropout_ff_list[n_block](ff_src_trg_multihead)
 
             # Add
-            ff_src_trg_multihead_add = shared_add_ff_list[n_block](
-                [ff_src_trg_multihead_dropout,
-                 src_trg_multihead_norm])
+            ff_src_trg_multihead_add = shared_add_ff_list[n_block]([ff_src_trg_multihead_dropout,
+                                                                    src_trg_multihead_norm])
 
             # And norm
-            ff_src_trg_multihead_norm = shared_norm_ff_list[n_block](
-                ff_src_trg_multihead_add)
+            ff_src_trg_multihead_norm = shared_norm_ff_list[n_block](ff_src_trg_multihead_add)
 
             prev_state_below = ff_src_trg_multihead_norm
 
