@@ -13,7 +13,6 @@ from keras_wrapper.extra.isles_utils import *
 from keras_wrapper.online_trainer import OnlineTrainer
 
 from config import load_parameters
-from config_online import load_parameters as load_parameters_online
 from data_engine.prepare_data import update_dataset_from_file
 from keras_wrapper.cnn_model import loadModel, updateModel
 from keras_wrapper.dataset import loadDataset
@@ -143,6 +142,7 @@ def interactive_simulation():
         params = load_parameters()
 
     if args.online:
+        from config_online import load_parameters as load_parameters_online
         online_parameters = load_parameters_online(params)
         params = update_parameters(params, online_parameters)
 
