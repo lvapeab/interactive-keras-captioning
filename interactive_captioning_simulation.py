@@ -43,7 +43,7 @@ def parse_args():
                                                                "are read from config.py")
     parser.add_argument("--max-n", type=int, default=5, help="Maximum number of words generated between isles")
     parser.add_argument("-trg", "--references", help="Reference sentence (for simulation)", required=False)
-    parser.add_argument("-bpe-tok", "--tokenize-bpe", help="Apply BPE tokenization", action='store_true', default=False)
+    parser.add_argument("-bpe-tok", "--tokenize-bpe", help="Apply BPE tokenization", action='store_true', default=True)
     parser.add_argument("-bpe-detok", "--detokenize-bpe", help="Revert BPE tokenization",
                         action='store_true', default=True)
     parser.add_argument("-tok-ref", "--tokenize-references", help="Tokenize references. If split to False, the references"
@@ -174,7 +174,7 @@ def interactive_simulation():
     if 'bpe' in params['TOKENIZATION_METHOD'].lower():
         logger.info('Building BPE')
         if not dataset.BPE_built:
-            dataset.build_bpe(params.get('BPE_CODES_PATH', params['DATA_ROOT_PATH'] + '/training_codes.joint'), bpe_separator)
+            dataset.build_bpe(params.get('BPE_CODES_PATH', params['DATA_ROOT_PATH'] + '/training_codes.joint'), separator=bpe_separator)
     # Build tokenization function
     tokenize_f = eval('dataset.' + params.get('TOKENIZATION_METHOD', 'tokenize_none'))
 
@@ -358,7 +358,7 @@ def interactive_simulation():
                     args.detokenize_bpe else tokenized_references
 
                 # Detokenize line for nicer logging :)
-                logger.debug(u'\n\nProcessing video %d' % (n_sample + 1))
+                logger.debug(u'\n\nProcessing sample %d' % (n_sample + 1))
                 logger.debug(u'Target: %s' % reference)
 
                 # 1. Get a first hypothesis
