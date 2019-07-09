@@ -25,4 +25,3 @@ pytest-xdist
 sacremoses
 scipy
 tensorflow
-tensorflow-gpu
