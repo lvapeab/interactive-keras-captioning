@@ -94,7 +94,7 @@ def load_parameters():
                          'test': 'Annotations/test_captions.txt',
                         }
     if 'image' in INPUT_DATA_TYPE:
-        LABELS_PER_SAMPLE = 1  # set to 0 if using a variable number of captions per image.
+        LABELS_PER_SAMPLE = 5  # set to 0 if using a variable number of captions per image.
     else:
         LABELS_PER_SAMPLE = 0  # set to 0 if using a variable number of captions per image.
 
