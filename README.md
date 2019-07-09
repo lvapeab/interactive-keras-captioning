@@ -1,9 +1,10 @@
 # Interactive Keras Captioning
 
-
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
+ ![Compatibility](https://img.shields.io/badge/Python-3.7-blue.svg) [![Requirements Status](https://requires.io/github/lvapeab/interactive-keras-captioning/requirements.svg?branch=master)](https://requires.io/github/lvapeab/interactive-keras-captioning/requirements/?branch=master) [![Documentation Status](https://readthedocs.org/projects/interactive-keras-captioning/badge/?version=latest)](https://interactive-keras-captioning.readthedocs.io/en/latest/?badge=latest)  [![license](https://img.shields.io/github/license/mashape/apistatus.svg)]()
 
 Interactive multimedia captioning with Keras (Theano and Tensorflow). Given an input image or video, we describe its content.
+ 
+Documentation: https://interactive-keras-captioning.readthedocs.io 
  
 # [Live demo here](http://casmacat.prhlt.upv.es/interactive-seq2seq)
 
