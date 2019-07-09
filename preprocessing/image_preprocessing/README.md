@@ -50,9 +50,9 @@ Following this structure, let's organize our folders:
             ```
             python ../feature_extraction/keras/simple_extractor.py
             ```
-        2.1.3. Generate lists pointing to the extracted features: `<split>_list_features.txt` (where <split> typically are train, val and test). Note that we also want to remove the MIME extension from the features, so we call this scrpit with the option  --replace-extension 4:
+        2.1.3. Generate lists pointing to the extracted features: `<split>_list_features.txt` (where <split> typically are train, val and test):
         ```
-        python generate_feature_lists.py --root-dir DATASETS/Flickr8k --features-dir Features/Flickr8k_NASNetLarge/ --features NASNetLarge --lists-dir Annotations --extension .npy --replace-extension 4
+        python generate_feature_lists.py --root-dir DATASETS/Flickr8k --features-dir Features/Flickr8k_NASNetLarge/ --features NASNetLarge --lists-dir Annotations --extension .npy
         ```
         
     2.2. Alternative 2 - using raw images:

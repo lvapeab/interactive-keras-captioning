@@ -41,7 +41,10 @@ def generate_feature_lists(root_dir, features_dir, features, lists_dir, list_suf
     for split in splits:
         print ('Processing split', split)
         ids = file2list(root_dir + '/' + lists_dir + '/' + split + list_suffix)
-        new_ids = [path_features + '/' + split + '/' + sample_id[:-replace_extension] + feature_extension for sample_id in ids]
+        if replace_extension > 0:
+            new_ids = [path_features + '/' + split + '/' + sample_id[:-replace_extension] + feature_extension for sample_id in ids]
+        else:
+            new_ids = [path_features + '/' + split + '/' + sample_id + feature_extension for sample_id in ids]
         list2file(root_dir + '/' + lists_dir + '/' + features + '/' + split + '_list_features.txt', new_ids)
     print ('Done!')
 
