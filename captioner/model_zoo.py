@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-
 from six import iteritems
-
 import numpy as np
 import os
 import logging
@@ -430,14 +428,14 @@ class Captioning_Model(Model_Wrapper):
     # ------------------------------------------------------- #
 
     def AttentionRNNEncoderDecoder(self, params):
-        """
-        Video captioning with:
+        """Video captioning with:
             * Attention mechansim on video frames
             * Conditional LSTM for processing the video
             * Feed forward layers:
                 + Context projected to output
                 + Last word projected to output
-        :param params:
+
+        :param params: Dictionary of hyperparmeters.
         :return:
         """
 

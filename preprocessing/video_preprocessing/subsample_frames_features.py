@@ -31,7 +31,6 @@ out_features_counts = ['train_' + out_features_name + '_counts.txt',
                        'val_' + out_features_name + '_counts.txt',
                        'test_' + out_features_name + '_counts.txt']
 
-#########
 
 for ff_, fc_, of_, oc_ in zip(features_files, features_counts_files, out_features,
                               out_features_counts):
