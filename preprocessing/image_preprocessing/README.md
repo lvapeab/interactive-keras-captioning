@@ -1,10 +1,10 @@
-# Data preprocessing
+# Image preprocessing
 
 Shows how to preprocess the image data for the Flickr8k dataset. Minor changes might be needed for other datasets.
 
 ## Structure
 
-We assume that we will work the directory `Dataset/Flickr8k`.
+We assume that our dataset will be stored in the directory `~/DATASETS/Flickr8k`.
 
 We will organize our dataset in 3 folders:
 
@@ -16,7 +16,7 @@ We will organize our dataset in 3 folders:
 
 Following this structure, let's organize our folders:
 
-1. Create the directories:   ``cd Dataset/Flickr8k; mkdir Features Images Annotations``
+1. Create the directories:   ``cd ~/DATASETS/Flickr8k; mkdir Features Images Annotations``
       
 2. Extract the `Flickr8k` images in `Images` and put the rest of files in `Annotations`.
 
@@ -30,9 +30,17 @@ Following this structure, let's organize our folders:
 
 ## Data pre-processing
 
+`cd` to this folder (`cd preprocessing/image_preprocessing/`
+
+
 1. Run `prepare_text_files.sh` inserting the path to your dataset annotations:
       ```
-      prepare_text_files.sh DATASETS/Flickr8k/Annotations Flickr8k.token.txt
+      bash prepare_text_files.sh ~/DATASETS/Flickr8k/Annotations Flickr8k.token.txt
+      ```
+2. Generate files with image paths:
+
+      ```
+      python generate_img_lists.py --root-dir ~/DATASETS/Flickr8k/ --image-dir ~/DATASETS/Flickr8k/Images --input-suffix _list.txt --output-dir Annotations --output-suffix _list_images.txt --splits train val test
       ```
 
 2. Process the images. You have two alternatives: using pre-extracted features or using the raw images.
@@ -40,11 +48,11 @@ Following this structure, let's organize our folders:
         2.1.1. Select the configuration of the extractor in `feature_extraction/config.py`. We'll extract features from the NASNetLarge model.
         2.1.2. Extract the features!
             ```
-            python preprocessing/feature_extraction/keras/simple_extractor.py
+            python ../feature_extraction/keras/simple_extractor.py
             ```
         2.1.3. Generate lists pointing to the extracted features: `<split>_list_features.txt` (where <split> typically are train, val and test). Note that we also want to remove the MIME extension from the features, so we call this scrpit with the option  --replace-extension 4:
         ```
-        python padchest_preprocessing/generate_feature_lists.py --root-dir DATASETS/Flickr8k --features-dir Features/padchest_NASNetLarge/ --features NASNetLarge --lists-dir Annotations --extension .npy --replace-extension 4
+        python generate_feature_lists.py --root-dir DATASETS/Flickr8k --features-dir Features/Flickr8k_NASNetLarge/ --features NASNetLarge --lists-dir Annotations --extension .npy --replace-extension 4
         ```
         
     2.2. Alternative 2 - using raw images:

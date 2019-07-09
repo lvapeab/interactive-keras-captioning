@@ -3,7 +3,7 @@ def load_parameters():
         Loads the defined parameters
     """
     # Input data params
-    TASK_NAME = 'padchest'
+    TASK_NAME = 'Flickr8k'
     DATA_ROOT_PATH = '/home/lvapeab/DATASETS/' + TASK_NAME + '/'
 
     # Image and features files (the chars {} will be replaced by each type of features)

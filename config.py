@@ -21,9 +21,9 @@ def load_parameters():
 
         if INPUT_DATA_TYPE == 'image-features':
             # Input data
-            FEATURE_NAMES = ['InceptionV3']
+            FEATURE_NAMES = ['NASNetLarge']
             # Image parameters
-            FEATURE_DIMENSION = [2048, 8, 8]
+            FEATURE_DIMENSION = [4032, 11, 11]
 
 
             NUM_FRAMES = -1
@@ -89,12 +89,12 @@ def load_parameters():
     OUTPUTS_TYPES_DATASET = ['text']
 
     # Output data
-    DESCRIPTION_FILES = {'train': 'Annotations/tokenized/bpe/training.txt', # Description files
-                         'val': 'Annotations/tokenized/bpe/dev.txt',
-                         'test': 'Annotations/tokenized/bpe/test.txt',
+    DESCRIPTION_FILES = {'train': 'Annotations/train_captions.txt', # Description files
+                         'val': 'Annotations/val_captions.txt',
+                         'test': 'Annotations/test_captions.txt',
                         }
     if 'image' in INPUT_DATA_TYPE:
-        LABELS_PER_SAMPLE = 5  # set to 0 if using a variable number of captions per image.
+        LABELS_PER_SAMPLE = 1  # set to 0 if using a variable number of captions per image.
     else:
         LABELS_PER_SAMPLE = 0  # set to 0 if using a variable number of captions per image.
 
@@ -116,7 +116,7 @@ def load_parameters():
     SAMPLING = 'max_likelihood'                   # Possible values: multinomial or max_likelihood (recommended).
     TEMPERATURE = 1                               # Multinomial sampling parameter.
     BEAM_SEARCH = True                            # Switches on-off the beam search procedure.
-    BEAM_SIZE = 10                                 # Beam size (in case of BEAM_SEARCH == True).
+    BEAM_SIZE = 6                                 # Beam size (in case of BEAM_SEARCH == True).
     OPTIMIZED_SEARCH = True                       # Compute annotations only a single time per sample.
     SEARCH_PRUNING = False                        # Apply pruning strategies to the beam search method.
                                                   # It will likely increase decoding speed, but decrease quality.
@@ -141,7 +141,7 @@ def load_parameters():
                                                   # See Dataset class (from stager_keras_wrapper) for more info.
     BPE_CODES_PATH = DATA_ROOT_PATH + 'Annotations/tokenized/bpe/training_codes.txt'    # If TOKENIZATION_METHOD = 'tokenize_bpe',
                                                   # sets the path to the learned BPE codes.
-    DETOKENIZATION_METHOD = 'detokenize_bpe'     # Select which de-tokenization method we'll apply
+    DETOKENIZATION_METHOD = 'detokenize_none'     # Select which de-tokenization method we'll apply
 
     APPLY_DETOKENIZATION = True                   # Wheter we apply a detokenization method
 
@@ -169,7 +169,7 @@ def load_parameters():
     LOSS = 'categorical_crossentropy'
     CLASSIFIER_ACTIVATION = 'softmax'
     SAMPLE_WEIGHTS = True                         # Select whether we use a weights matrix (mask) for the data outputs
-    LABEL_SMOOTHING = 0.05                        # Epsilon value for label smoothing. Only valid for 'categorical_crossentropy' loss. See arxiv.org/abs/1512.00567.
+    LABEL_SMOOTHING = 0.1                        # Epsilon value for label smoothing. Only valid for 'categorical_crossentropy' loss. See arxiv.org/abs/1512.00567.
 
     OPTIMIZER = 'Adam'                            # Optimizer. Supported optimizers: SGD, RMSprop, Adagrad, Adadelta, Adam, Adamax, Nadam.
     LR = 0.0002                                   # Learning rate. Recommended values - Adam 0.0002 - Adadelta 1.0.
@@ -214,7 +214,7 @@ def load_parameters():
 
     # Early stop parameters
     EARLY_STOP = True                             # Turns on/off the early stop protocol.
-    PATIENCE = 10                                 # We'll stop if the val STOP_METRIC does not improve after this.
+    PATIENCE = 20                                 # We'll stop if the val STOP_METRIC does not improve after this.
                                                   # number of evaluations.
     STOP_METRIC = 'Bleu_4'                        # Metric for the stop.
 
@@ -232,7 +232,7 @@ def load_parameters():
     INNER_INIT = 'orthogonal'                     # Initialization function for inner RNN matrices.
     INIT_ATT = 'glorot_uniform'                   # Initialization function for attention mechism matrices
 
-    TARGET_TEXT_EMBEDDING_SIZE = 192              # Source language word embedding size.
+    TARGET_TEXT_EMBEDDING_SIZE = 256              # Source language word embedding size.
     TRG_PRETRAINED_VECTORS = None                 # Path to pretrained vectors. (e.g. DATA_ROOT_PATH + '/DATA/word2vec.%s.npy' % TRG_LAN)
                                                   # Set to None if you don't want to use pretrained vectors.
                                                   # When using pretrained word embeddings, the size of the pretrained word embeddings must match with the word embeddings size.
@@ -251,7 +251,7 @@ def load_parameters():
     # Additional Fully-Connected layers applied before softmax.
     #       Here we should specify the activation function and the output dimension.
     #       (e.g DEEP_OUTPUT_LAYERS = [('tanh', 600), ('relu', 400), ('relu', 200)])
-    DEEP_OUTPUT_LAYERS = [('linear', TARGET_TEXT_EMBEDDING_SIZE)]
+    DEEP_OUTPUT_LAYERS = [] # [('linear', TARGET_TEXT_EMBEDDING_SIZE)]
     # # # # # # # # # # # # # # # # # # # # # # # #
 
     # AttentionRNNEncoderDecoder model hyperparameters
@@ -275,7 +275,7 @@ def load_parameters():
     INIT_LAYERS = ['tanh']
 
     # Decoder configuration
-    RNN_DECODER_HIDDEN_SIZE = 192                      # For models with RNN decoder.
+    RNN_DECODER_HIDDEN_SIZE = TARGET_TEXT_EMBEDDING_SIZE     # For models with RNN decoder.
     ATTENTION_SIZE = RNN_DECODER_HIDDEN_SIZE
 
     # Skip connections parameters
@@ -286,8 +286,8 @@ def load_parameters():
 
     # Transformer model hyperparameters
     # # # # # # # # # # # # # # # # # # # # # # # #
-    MODEL_SIZE = 192                               # Transformer model size (d_{model} in de paper).
-    MULTIHEAD_ATTENTION_ACTIVATION = 'relu'     # Activation the input projections in the Multi-Head Attention blocks.
+    MODEL_SIZE = TARGET_TEXT_EMBEDDING_SIZE       # Transformer model size (d_{model} in de paper).
+    MULTIHEAD_ATTENTION_ACTIVATION = 'linear'     # Activation the input projections in the Multi-Head Attention blocks.
     FF_SIZE = MODEL_SIZE * 4                      # Size of the feed-forward layers of the Transformer model.
     N_HEADS = 4                                   # Number of parallel attention layers of the Transformer model.
     # # # # # # # # # # # # # # # # # # # # # # # #
@@ -297,12 +297,12 @@ def load_parameters():
     WEIGHT_DECAY = 1e-4                           # Regularization coefficient.
     RECURRENT_WEIGHT_DECAY = 0.                   # Regularization coefficient in recurrent layers.
 
-    DROPOUT_P = 0.1                               # Percentage of units to drop (0 means no dropout).
+    DROPOUT_P = 0.5                               # Percentage of units to drop (0 means no dropout).
     RECURRENT_INPUT_DROPOUT_P = 0.                # Percentage of units to drop in input cells of recurrent layers.
     RECURRENT_DROPOUT_P = 0.                      # Percentage of units to drop in recurrent layers.
-    ATTENTION_DROPOUT_P = 0.                      # Percentage of units to drop in attention layers (0 means no dropout).
+    ATTENTION_DROPOUT_P = 0.5                      # Percentage of units to drop in attention layers (0 means no dropout).
 
-    USE_NOISE = True                              # Use gaussian noise during training
+    USE_NOISE = False                              # Use gaussian noise during training
     NOISE_AMOUNT = 0.01                           # Amount of noise
 
     USE_BATCH_NORMALIZATION = True                # If True it is recommended to deactivate Dropout
