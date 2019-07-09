@@ -44,18 +44,24 @@ Following this structure, let's organize our folders:
       ```
 
 2. Process the images. You have two alternatives: using pre-extracted features or using the raw images.
+
     2.1 Alternative 1 - using feature vectors:
+    
         2.1.1. Select the configuration of the extractor in `feature_extraction/config.py`. We'll extract features from the NASNetLarge model.
+        
         2.1.2. Extract the features!
             ```
             python ../feature_extraction/keras/simple_extractor.py
             ```
+            
         2.1.3. Generate lists pointing to the extracted features: `<split>_list_features.txt` (where <split> typically are train, val and test):
         ```
         python generate_feature_lists.py --root-dir DATASETS/Flickr8k --features-dir Features/Flickr8k_NASNetLarge/ --features NASNetLarge --lists-dir Annotations --extension .npy
         ```
         
     2.2. Alternative 2 - using raw images:
+    
         2.2.1. Copy the generated <set-split>_list.txt files into the same folder where you have the annotations extracted.
+        
         2.2.2. Run generate_img_lists.py inserting your images path and their identifier.
 
