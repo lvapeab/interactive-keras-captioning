@@ -22,7 +22,7 @@ Once we have our model trained, we can translate new text using the `caption.py`
                               --dataset datasets/Dataset_tutorial_dataset.pkl \
                               --split test
 
-.. _documentation file: https://github.com/lvapeab/interactive-keras-captioning/blob/master/examples/docs/config.md
+.. _documentation file: https://interactive-keras-captioning.readthedocs.io/en/latest/hyperparameters.html
 .. _config.py: https://github.com/lvapeab/interactive-keras-captioning/blob/master/config.py
 .. _main.py: https://github.com/lvapeab/interactive-keras-captioning/blob/master/main.py
 .. _caption.py: https://github.com/lvapeab/interactive-keras-captioning/blob/master/caption.py
