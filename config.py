@@ -3,12 +3,12 @@ def load_parameters():
         Loads the defined parameters
     """
     # Input data params
-    # preprocessed features
-    TASK_NAME = 'Flickr8k'                           # Task name
-    DATASET_NAME = TASK_NAME                        # Dataset name
+    TASK_NAME = 'Flickr8k'                        # Task name
+    DATASET_NAME = TASK_NAME                      # Dataset name
     DATA_ROOT_PATH = '/home/lvapeab/DATASETS/%s/' % TASK_NAME  # Root path to the data
-    TRG_LAN = 'en'                                  # Language of the target text
-    INPUT_DATA_TYPE = 'image-features'
+    TRG_LAN = 'en'                                # Language of the target text
+
+    INPUT_DATA_TYPE = 'image-features'            # Type of the input data. Supported: 'image-features', 'raw-image', 'video-features', 'raw-video'. raw-* somewhat untested.
     # Prepare input mapping between dataset and model
     INPUTS_IDS_DATASET = []
     INPUTS_IDS_MODEL = []
@@ -18,35 +18,29 @@ def load_parameters():
         IMG_CROP_SIZE = None
         NORMALIZE = False
         NORMALIZATION_TYPE = None
-
+        # Options for input data type 'image-features'
         if INPUT_DATA_TYPE == 'image-features':
-            # Input data
-            FEATURE_NAMES = ['NASNetLarge']
-            # Image parameters
-            FEATURE_DIMENSION = [4032, 11, 11]
-
-
-            NUM_FRAMES = -1
-            # Image and features files (the chars {} will be replaced by each type of features)
-            FRAMES_LIST_FILES = {'train': 'Annotations/%s/train_list_features.txt',#['Annotations/train_list_images.txt', 'Annotations/train_list_ids.txt'],
-                                 'val': 'Annotations/%s/val_list_features.txt', # ['Annotations/val_list_images.txt', 'Annotations/val_list_ids.txt'],
-                                 'test': 'Annotations/%s/test_list_features.txt' #  ['Annotations/test_list_images.txt', 'Annotations/test_list_ids.txt']
+            FEATURE_NAMES = ['NASNetLarge']       # Name of the features
+            FEATURE_DIMENSION = [4032, 11, 11]    # Dimensions of the features.
+            NUM_FRAMES = -1                       # Number of frames per image (must be set to -1).
+            # Feature files.
+            FRAMES_LIST_FILES = {'train': 'Annotations/%s/train_list_features.txt',
+                                 'val': 'Annotations/%s/val_list_features.txt',
+                                 'test': 'Annotations/%s/test_list_features.txt'
                                 }
-
         else:
-            # Input data
-            FEATURE_NAMES = ['C3D_fc8_ImageNet']
-
-            # Video parameters
-            NUM_FRAMES = 26 # fixed number of input frames per video
-            FEATURE_DIMENSION = 1511
+            # Options for input data type 'video-features'
+            FEATURE_NAMES = ['C3D_fc8_ImageNet']  #  Feature names.
+            FEATURE_DIMENSION = 1511              # Dimension of the features. List of shapes or integer specifying the last dimension.
+            NUM_FRAMES = 26                       # fixed number of input frames per video
 
             # Features from video frames
-            FRAMES_LIST_FILES = {'train': 'Annotations/%s/train_feat_list.txt',                 # Feature frames list files
+            FRAMES_LIST_FILES = {'train': 'Annotations/%s/train_feat_list.txt',
                                  'val': 'Annotations/%s/val_feat_list.txt',
                                  'test': 'Annotations/%s/test_feat_list.txt',
                                 }
-            FRAMES_COUNTS_FILES = {'train': 'Annotations/%s/train_feat_counts.txt',           # Frames counts files
+            # Frame counts files
+            FRAMES_COUNTS_FILES = {'train': 'Annotations/%s/train_feat_counts.txt',
                                    'val': 'Annotations/%s/val_feat_counts.txt',
                                    'test': 'Annotations/%s/test_feat_counts.txt',
                                   }
@@ -54,12 +48,17 @@ def load_parameters():
         for f in FEATURE_NAMES:
             INPUTS_IDS_DATASET.append(f)
             INPUTS_IDS_MODEL.append(f)
-        DATASET_NAME += "_" + "_".join(FEATURE_NAMES)  # Dataset name
+        # Dataset name
+        DATASET_NAME += "_" + "_".join(FEATURE_NAMES)
 
     elif 'raw-image' in INPUT_DATA_TYPE:
         # InceptionV3
-        IMG_SIZE = [342, 342, 3]  # Size of the input images (will be resized to the desired size)
-        IMG_CROP_SIZE = [299, 299, 3]  # Size of the image crops inputted to the model
+        IMG_SIZE = [342, 342, 3]                  # Size of the input images (will be resized to the desired size)
+        IMG_CROP_SIZE = [299, 299, 3]             # Size of the image crops inputted to the model
+        FEATURE_NAMES = []                        # Name of the features computed by the model.
+        NORMALIZE = True                          #  Apply image normalization.
+        NORMALIZATION_TYPE = '(-1)-1'             # Select type of normalization.
+        DATA_AUGMENTATION = False                 # Apply data augmentation on input data
 
         # Image and features files (the chars {} will be replaced by each type of features)
         FRAMES_LIST_FILES = {'train': ['Annotations/train_list_images.txt',
@@ -69,34 +68,34 @@ def load_parameters():
                              'test': ['Annotations/test_list_images.txt',
                                       'Annotations/test_list_ids.txt']
                      }
-        FEATURE_NAMES = []
-        NORMALIZE = True
-        NORMALIZATION_TYPE = '(-1)-1'
-
         # Prepare input mapping between dataset and model
-        INPUTS_IDS_DATASET = ['image']  # Corresponding inputs of the dataset
-        INPUTS_IDS_MODEL = ['input_1']  # Corresponding inputs of the built model ('input_1' for ResNet50)
+        INPUTS_IDS_DATASET = ['image']            # Corresponding inputs of the dataset
+        INPUTS_IDS_MODEL = ['input_1']            # Corresponding inputs of the built model ('input_1' for ResNet50)
 
     # Dataset parameters
     INPUTS_IDS_DATASET.append('state_below')
     INPUTS_IDS_MODEL.append('state_below')
+
     # Prepare output mapping between dataset and model
-    OUTPUTS_IDS_DATASET = ['description']  # Corresponding outputs of the dataset
-    OUTPUTS_IDS_MODEL = ['description']  # Corresponding outputs of the built model
+    OUTPUTS_IDS_DATASET = ['description']         # Corresponding outputs of the dataset
+    OUTPUTS_IDS_MODEL = ['description']           # Corresponding outputs of the built model
 
     # Corresponding types of the data.
     INPUTS_TYPES_DATASET = [INPUT_DATA_TYPE, 'text']
     OUTPUTS_TYPES_DATASET = ['text']
 
     # Output data
-    DESCRIPTION_FILES = {'train': 'Annotations/train_captions.txt', # Description files
+    # Path to the files containing the captions
+    DESCRIPTION_FILES = {'train': 'Annotations/train_captions.txt',
                          'val': 'Annotations/val_captions.txt',
                          'test': 'Annotations/test_captions.txt',
                         }
+
+    # Number of references per sample.
     if 'image' in INPUT_DATA_TYPE:
-        LABELS_PER_SAMPLE = 5  # set to 0 if using a variable number of captions per image.
+        LABELS_PER_SAMPLE = 1                     # set to 0 if using a variable number of captions per image.
     else:
-        LABELS_PER_SAMPLE = 0  # set to 0 if using a variable number of captions per image.
+        LABELS_PER_SAMPLE = 0                     # set to 0 if using a variable number of captions per image.
 
     # This will be used if LABELS_PER_SAMPLE == 0
     DESCRIPTION_COUNTS_FILES = {'train': 'Annotations/train_descriptions_counts.npy',  # Description counts files
@@ -109,8 +108,8 @@ def load_parameters():
     EVAL_ON_SETS = ['val']                        # Possible values: 'train', 'val' and 'test' (external evaluator)
     EVAL_ON_SETS_KERAS = []                       # Possible values: 'train', 'val' and 'test' (Keras' evaluator). Untested.
     START_EVAL_ON_EPOCH = 2                       # First epoch to start the model evaluation
-    EVAL_EACH_EPOCHS = False                       # Select whether evaluate between N epochs or N updates
-    EVAL_EACH = 250                                 # Sets the evaluation frequency (epochs or updates)
+    EVAL_EACH_EPOCHS = False                      # Select whether evaluate between N epochs or N updates
+    EVAL_EACH = 250                               # Sets the evaluation frequency (epochs or updates)
 
     # Search parameters
     SAMPLING = 'max_likelihood'                   # Possible values: multinomial or max_likelihood (recommended).
@@ -149,10 +148,6 @@ def load_parameters():
                                                   # previously defined tokenization method.
     TOKENIZE_REFERENCES = True                    # Whether we tokenize the references using the
                                                   # previously defined tokenization method.
-
-    # Input image parameters
-    DATA_AUGMENTATION = False                     # Apply data augmentation on input data (still unimplemented for text inputs).
-
     # Text parameters
     FILL = 'end'                                  # Whether we pad the 'end', the 'start' of  the sentence with 0s. We can also 'center' it.
     PAD_ON_BATCH = True                           # Whether we take as many timesteps as the longest sequence of
@@ -169,11 +164,11 @@ def load_parameters():
     LOSS = 'categorical_crossentropy'
     CLASSIFIER_ACTIVATION = 'softmax'
     SAMPLE_WEIGHTS = True                         # Select whether we use a weights matrix (mask) for the data outputs
-    LABEL_SMOOTHING = 0.1                        # Epsilon value for label smoothing. Only valid for 'categorical_crossentropy' loss. See arxiv.org/abs/1512.00567.
+    LABEL_SMOOTHING = 0.1                         # Epsilon value for label smoothing. Only valid for 'categorical_crossentropy' loss. See arxiv.org/abs/1512.00567.
 
     OPTIMIZER = 'Adam'                            # Optimizer. Supported optimizers: SGD, RMSprop, Adagrad, Adadelta, Adam, Adamax, Nadam.
     LR = 0.0002                                   # Learning rate. Recommended values - Adam 0.0002 - Adadelta 1.0.
-    CLIP_C = 10.                                   # During training, clip L2 norm of gradients to this value (0. means deactivated).
+    CLIP_C = 10.                                  # During training, clip L2 norm of gradients to this value (0. means deactivated).
     CLIP_V = 0.                                   # During training, clip absolute value of gradients to this value (0. means deactivated).
     USE_TF_OPTIMIZER = True                       # Use native Tensorflow's optimizer (only for the Tensorflow backend).
 
@@ -188,14 +183,14 @@ def load_parameters():
 
     # Learning rate schedule
     LR_DECAY = None                               # Frequency (number of epochs or updates) between LR annealings. Set to None for not decay the learning rate.
-    LR_GAMMA = 1.                                # Multiplier used for decreasing the LR.
+    LR_GAMMA = 1.                                 # Multiplier used for decreasing the LR.
     LR_REDUCE_EACH_EPOCHS = False                 # Reduce each LR_DECAY number of epochs or updates.
     LR_START_REDUCTION_ON_EPOCH = 0               # Epoch to start the reduction.
-    LR_REDUCER_TYPE = 'noam'               # Function to reduce. 'linear' and 'exponential' implemented.
+    LR_REDUCER_TYPE = 'noam'                      # Function to reduce. 'linear' and 'exponential' implemented.
                                                   # Linear reduction: new_lr = lr * LR_GAMMA
                                                   # Exponential reduction: new_lr = lr * LR_REDUCER_EXP_BASE ** (current_nb / LR_HALF_LIFE) * LR_GAMMA
                                                   # Noam reduction: new_lr = lr * min(current_nb ** LR_REDUCER_EXP_BASE, current_nb * LR_HALF_LIFE ** WARMUP_EXP)
-    LR_REDUCER_EXP_BASE = -0.7                     # Base for the exponential decay.
+    LR_REDUCER_EXP_BASE = -0.7                    # Base for the exponential decay.
     LR_HALF_LIFE = 4000                           # Factor/warmup steps for exponenital/noam decay.
     WARMUP_EXP = -1.5                             # Warmup steps for noam decay.
     MIN_LR = 1e-9                                 # Minimum value allowed for the decayed LR
@@ -208,7 +203,7 @@ def load_parameters():
     HOMOGENEOUS_BATCHES = False                   # Use batches with homogeneous output lengths (Dangerous!!).
     JOINT_BATCHES = 4                             # When using homogeneous batches, get this number of batches to sort.
     PARALLEL_LOADERS = 1                          # Parallel data batch loaders. Somewhat untested if > 1.
-    EPOCHS_FOR_SAVE = 100                           # Number of epochs between model saves.
+    EPOCHS_FOR_SAVE = 100                         # Number of epochs between model saves.
     WRITE_VALID_SAMPLES = True                    # Write valid samples in file.
     SAVE_EACH_EVALUATION = True                   # Save each time we evaluate the model.
 
@@ -261,7 +256,6 @@ def load_parameters():
 
     DECODER_RNN_TYPE = 'ConditionalLSTM'          # Decoder's RNN unit type.
                                                   # ('LSTM', 'GRU', 'ConditionalLSTM' and 'ConditionalGRU' supported).
-    ATTENTION_MODE = 'add'                        # Attention mode. 'add' (Bahdanau-style), 'dot' (Luong-style) or 'scaled-dot'.
 
     # Encoder configuration
     RNN_ENCODER_HIDDEN_SIZE = 0                     # For models with RNN encoder
@@ -269,14 +263,16 @@ def load_parameters():
     BIDIRECTIONAL_DEEP_ENCODER = True             # Use bidirectional encoder in all encoding layers
     BIDIRECTIONAL_MERGE_MODE = 'concat'           # Merge function for bidirectional layers.
 
+
+    # Decoder configuration
+    RNN_DECODER_HIDDEN_SIZE = TARGET_TEXT_EMBEDDING_SIZE     # For models with RNN decoder.
+    ATTENTION_MODE = 'add'                        # Attention mode. 'add' (Bahdanau-style), 'dot' (Luong-style) or 'scaled-dot'.
+    ATTENTION_SIZE = RNN_DECODER_HIDDEN_SIZE     # Size of the attention mechanism (only for the 'add' ATTENTION MODE)
+
     # Fully-Connected layers for initializing the first decoder RNN state.
     #       Here we should only specify the activation function of each layer (as they have a potentially fixed size)
     #       (e.g INIT_LAYERS = ['tanh', 'relu'])
     INIT_LAYERS = ['tanh']
-
-    # Decoder configuration
-    RNN_DECODER_HIDDEN_SIZE = TARGET_TEXT_EMBEDDING_SIZE     # For models with RNN decoder.
-    ATTENTION_SIZE = RNN_DECODER_HIDDEN_SIZE
 
     # Skip connections parameters
     SKIP_VECTORS_HIDDEN_SIZE = TARGET_TEXT_EMBEDDING_SIZE     # Hidden size.
@@ -343,14 +339,14 @@ def load_parameters():
     DATASET_STORE_PATH = 'datasets/'                   # Dataset instance will be stored here.
 
     # Tensorboard configuration. Only if the backend is Tensorflow. Otherwise, it will be ignored.
-    TENSORBOARD = True                       # Switches On/Off the tensorboard callback.
-    LOG_DIR = 'tensorboard_logs'             # Directory to store teh model. Will be created inside STORE_PATH.
-    EMBEDDINGS_FREQ = 1                      # Frequency (in epochs) at which selected embedding layers will be saved.
-    EMBEDDINGS_LAYER_NAMES = [               # A list of names of layers to keep eye on. If None or empty list all the embedding layer will be watched.
+    TENSORBOARD = True                                 # Switches On/Off the tensorboard callback.
+    LOG_DIR = 'tensorboard_logs'                       # Directory to store teh model. Will be created inside STORE_PATH.
+    EMBEDDINGS_FREQ = 1                                # Frequency (in epochs) at which selected embedding layers will be saved.
+    EMBEDDINGS_LAYER_NAMES = [                         # A list of names of layers to keep eye on. If None or empty list all the embedding layer will be watched.
         'target_word_embedding']
-    EMBEDDINGS_METADATA = None               # Dictionary which maps layer name to a file name in which metadata for this embedding layer is saved.
-    LABEL_WORD_EMBEDDINGS_WITH_VOCAB = True  # Whether to use vocabularies as word embeddings labels (will overwrite EMBEDDINGS_METADATA).
-    WORD_EMBEDDINGS_LABELS = [               # Vocabularies for labeling. Must match EMBEDDINGS_LAYER_NAMES.
+    EMBEDDINGS_METADATA = None                         # Dictionary which maps layer name to a file name in which metadata for this embedding layer is saved.
+    LABEL_WORD_EMBEDDINGS_WITH_VOCAB = True            # Whether to use vocabularies as word embeddings labels (will overwrite EMBEDDINGS_METADATA).
+    WORD_EMBEDDINGS_LABELS = [                         # Vocabularies for labeling. Must match EMBEDDINGS_LAYER_NAMES.
         'target_text']
 
     SAMPLING_SAVE_MODE = 'list'                        # 'list': Store in a text file, one sentence per line.
