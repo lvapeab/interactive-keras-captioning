@@ -78,6 +78,10 @@ For accelerating the training and decoding on CUDA GPUs, you can optionally inst
 
 ## Usage
 
+### Preprocessing
+ The instructions for data preprocessing (image or videos) are [here](https://github.com/lvapeab/interactive-keras-captioning/tree/master/preprocessing).
+
+
 ### Training
  1) Set a training configuration in the `config.py` script. Each parameter is commented. You can also specify the parameters when calling the `main.py` script following the syntax `Key=Value`
 

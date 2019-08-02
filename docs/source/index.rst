@@ -68,7 +68,7 @@ Guide
 
    requirements
    usage
-   configuration
+   hyperparameters
    modules
    help
 

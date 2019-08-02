@@ -219,6 +219,7 @@ def build_dataset(params):
                         fill=params['FILL'],
                         max_text_len=params['MAX_OUTPUT_TEXT_LEN'],
                         max_words=params['OUTPUT_VOCABULARY_SIZE'],
+                        bpe_codes=params.get('BPE_CODES_PATH', None),
                         min_occ=params['MIN_OCCURRENCES_OUTPUT_VOCAB'])
 
             ds.setInput(None, 'val', type='ghost',
