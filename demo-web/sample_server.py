@@ -183,8 +183,8 @@ class VideoDescSampler:
             self.online_trainer = OnlineTrainer(self.models,
                                                 self.dataset,
                                                 None,  # Sampler
-                                                None,  # Params prediction
-                                                params_training,
+                                                params_prediction=params_prediction,  # Params prediction
+                                                params_training=params_training,
                                                 verbose=self.verbose)
             for i, model in enumerate(self.models):
                 logger.info('Compiling model %d...' % i)
